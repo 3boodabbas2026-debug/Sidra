@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060913">
+<title>إلى سِدرة 🤍</title>
+
+<!-- Elegant Arabic fonts (Amiri for the messages, Tajawal for UI) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #060913;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Tajawal', sans-serif;
+  }
+
+  /* ── Layers ─────────────────────────────────────────────── */
+  #scene-container { position: fixed; inset: 0; z-index: 1; }
+  #fx-canvas       { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+
+  /* Cinematic vignette over the 3D scene */
+  #vignette {
+    position: fixed; inset: 0; z-index: 3; pointer-events: none;
+    background: radial-gradient(ellipse at center,
+      transparent 42%, rgba(2, 4, 12, .38) 78%, rgba(1, 2, 8, .72) 100%);
+  }
+
+  /* ── Intro overlay (first tap = music unlock) ───────────── */
+  #intro {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 38%, #0e1735 0%, #060913 72%);
+    transition: opacity 1.8s ease;
+    cursor: pointer;
+  }
+  #intro.hidden { opacity: 0; pointer-events: none; }
+  #intro h1 {
+    font-family: 'Amiri', serif;
+    font-size: clamp(2.4rem, 10vw, 4.5rem);
+    color: #f7f3e8;
+    animation: introGlow 3s ease-in-out infinite;
+  }
+  #intro p {
+    margin-top: 1.2rem;
+    font-size: clamp(.9rem, 4vw, 1.15rem);
+    color: rgba(215, 222, 245, .75);
+    letter-spacing: .5px;
+    animation: softPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes introGlow {
+    0%, 100% { text-shadow: 0 0 25px rgba(255,240,200,.35), 0 0 55px rgba(160,190,255,.2); }
+    50%      { text-shadow: 0 0 45px rgba(255,240,200,.7),  0 0 95px rgba(160,190,255,.4); }
+  }
+  @keyframes softPulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+
+  /* ── Hints ──────────────────────────────────────────────── */
+  .hint {
+    position: fixed; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(.85rem, 4vw, 1.05rem);
+    color: rgba(230, 235, 250, .85);
+    text-shadow: 0 0 12px rgba(180, 200, 255, .55), 0 1px 6px rgba(0,0,0,.8);
+    animation: softPulse 2.2s ease-in-out infinite;
+    opacity: 0; transition: opacity 1.5s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #hint        { bottom: 6vh; }
+  #bubble-hint { top: 4.5vh; }
+  .hint.visible { opacity: 1; }
+  .hint.gone    { opacity: 0 !important; }
+
+  /* ── Floating Arabic messages ───────────────────────────── */
+  #messages { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+  .msg {
+    position: absolute; left: 0; top: 0;
+    max-width: min(56vw, 300px);
+    text-align: center;
+    font-family: 'Amiri', serif;
+    font-size: clamp(.92rem, 4vw, 1.3rem);
+    font-weight: 700;
+    line-height: 1.8;
+    color: #f6f1e3;
+    direction: rtl;
+    text-shadow:
+      0 0 10px rgba(255, 244, 214, .55),
+      0 0 26px rgba(150, 180, 255, .35),
+      0 2px 8px rgba(0, 0, 0, .85);
+    opacity: 0;
+    transition: opacity 2.4s ease;
+    will-change: transform;
+    pointer-events: auto;      /* messages are touchable */
+    cursor: grab;
+  }
+  .msg.visible { opacity: 1; }
+
+  /* 🫧 When she taps a message it becomes a bubble she can throw */
+  .msg.bubble {
+    padding: .9rem 1.3rem;
+    border-radius: 2.2rem;
+    background: radial-gradient(circle at 30% 25%,
+      rgba(255,255,255,.20), rgba(170,200,255,.06) 55%, rgba(255,255,255,.10));
+    border: 1px solid rgba(200, 222, 255, .4);
+    box-shadow:
+      0 0 26px rgba(170, 200, 255, .3),
+      inset 0 0 18px rgba(255, 255, 255, .1),
+      inset 0 -6px 14px rgba(140, 180, 255, .12);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    animation: bubblePop .45s ease;
+  }
+  .msg.bubble:active { cursor: grabbing; }
+  @keyframes bubblePop {
+    0%   { scale: 1; }
+    45%  { scale: 1.14; }
+    100% { scale: 1; }
+  }
+
+  /* ── Glowing gallery button ─────────────────────────────── */
+  #gallery-btn {
+    position: fixed; bottom: 5vh; left: 50%;
+    transform: translateX(-50%) scale(.85);
+    z-index: 20;
+    padding: .8rem 2.1rem;
+    font-family: 'Amiri', serif;
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
+    color: #fdf8ec;
+    background: rgba(255, 248, 230, .07);
+    border: 1px solid rgba(255, 240, 200, .45);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 2s ease, transform 2s ease;
+    animation: btnGlow 2.8s ease-in-out infinite;
+  }
+  #gallery-btn.visible {
+    opacity: 1; pointer-events: auto;
+    transform: translateX(-50%) scale(1);
+  }
+  @keyframes btnGlow {
+    0%, 100% { box-shadow: 0 0 14px rgba(255,236,190,.25), inset 0 0 10px rgba(255,236,190,.08); }
+    50%      { box-shadow: 0 0 32px rgba(255,236,190,.55), inset 0 0 16px rgba(255,236,190,.16); }
+  }
+
+  /* ── Memories gallery (photos + videos) ─────────────────── */
+  #gallery {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(4, 7, 18, .93);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none;
+    transition: opacity .6s ease;
+  }
+  #gallery.open { opacity: 1; pointer-events: auto; }
+  #gallery img, #gallery video {
+    max-width: 88vw; max-height: 62vh;
+    border-radius: 18px;
+    box-shadow: 0 0 50px rgba(190, 205, 255, .22), 0 10px 40px rgba(0,0,0,.6);
+    object-fit: contain;
+    background: #000;
+    transition: opacity .3s ease;
+  }
+  #gallery .g-caption {
+    margin-top: 1.1rem;
+    color: rgba(220, 226, 245, .8);
+    font-size: .95rem;
+    letter-spacing: 1px;
+    direction: ltr;
+  }
+  #gallery .g-empty {
+    font-family: 'Amiri', serif;
+    color: rgba(235, 238, 250, .85);
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 0 2rem;
+    line-height: 2.2;
+  }
+  .g-nav {
+    position: absolute; top: 50%;
+    transform: translateY(-50%);
+    width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; color: #f0ecdf;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 2;
+  }
+  #g-prev { left: 3vw; }
+  #g-next { right: 3vw; }
+  #g-close {
+    position: absolute; top: 3.5vh; right: 5vw;
+    font-size: 1.7rem; color: rgba(240, 236, 223, .85);
+    cursor: pointer;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div id="scene-container"></div>
+<canvas id="fx-canvas"></canvas>
+<div id="vignette"></div>
+
+<!-- Intro screen — her first tap here also starts the music -->
+<div id="intro">
+  <h1>إلى سِدرة 🤍</h1>
+  <p>المسي الشاشة للدخول ✨</p>
+</div>
+
+<div id="hint" class="hint">اضغطي على الوردة 🤍</div>
+<div id="bubble-hint" class="hint">المسي أي رسالة وحرّكيها متل الفقاعة 🫧</div>
+<div id="messages"></div>
+
+<button id="gallery-btn">ذكرياتنا ✨</button>
+
+<div id="gallery">
+  <div id="g-close">✕</div>
+  <div class="g-nav" id="g-prev">‹</div>
+  <img id="g-img" alt="ذكرياتنا" style="display:none">
+  <video id="g-video" controls playsinline preload="metadata" style="display:none"></video>
+  <div class="g-empty" id="g-empty" style="display:none">
+    قريباً… ذكرياتنا الحلوة رح تكون هون 🤍
+  </div>
+  <div class="g-caption" id="g-caption"></div>
+  <div class="g-nav" id="g-next">›</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     🎵 MUSIC — put your mp3 next to this file and replace the
+     filename below. It starts on her first tap (autoplay is
+     blocked on phones, so the intro tap is the unlock).
+     ══════════════════════════════════════════════════════════════ -->
+<audio id="bg-music" loop preload="auto">
+  <source src="YOUR_MUSIC_FILE.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Three.js r128 (stable build, works on all mobile browsers) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   ⚙️  EASY CONFIG
+   ════════════════════════════════════════════════════════════════ */
+
+/* 🖼️ Your Snapchat memories — files inside the "memories" folder.
+   Photos and videos both work; add or remove lines freely.       */
+const MEMORIES = [
+  'memories/Snapchat-1012999025.jpg',
+  'memories/Snapchat-111030093.jpg',
+  'memories/Snapchat-1131213415.jpg',
+  'memories/Snapchat-1173149521.jpg',
+  'memories/Snapchat-1308862633.jpg',
+  'memories/Snapchat-1328236937.jpg',
+  'memories/Snapchat-1395687425.jpg',
+  'memories/Snapchat-1430855067.jpg',
+  'memories/Snapchat-1570814807.jpg',
+  'memories/Snapchat-1626314042.jpg',
+  'memories/Snapchat-16872832.jpg',
+  'memories/Snapchat-1764516401.jpg',
+  'memories/Snapchat-193927078.jpg',
+  'memories/Snapchat-2041602214.jpg',
+  'memories/Snapchat-422275962.jpg',
+  'memories/Snapchat-518263990.jpg',
+  'memories/Snapchat-607829568.jpg',
+  'memories/Snapchat-659360062.jpg',
+  'memories/Snapchat-727248920.jpg',
+  'memories/Snapchat-935623086.jpg',
+  'memories/Snapchat-1003847677.mp4',
+  'memories/Snapchat-1042475492.mp4',
+  'memories/Snapchat-1119338354.mp4',
+  'memories/Snapchat-1306884944.mp4',
+  'memories/Snapchat-2001426830.mp4',
+];
+
+/* 💬 The messages that orbit the flower (tap one → it becomes a
+   bubble she can drag and throw around the screen)               */
+const MESSAGES = [
+  'أنا عنجد ممتن لوجودك بحياتي',
+  'الله يخليلي هالصداقة وما يحرمني منك',
+  'إنتي إنسانة نادرة وما بتنعوّض',
+  'شكراً لأنك دايماً بتسمعيلي وبتوقفي معي',
+  'صحبتك بتسوى الدنيا وما فيها',
+  'يا رب تضلي دايماً مبسوطة والضحكة ما تفارق وجهك',
+  'أحلى صدفة إننا صرنا رفقات',
+  'ديري بالك على حالك يا أطيب قلب',
+  'قلبك الطيب بيخلي الدنيا أحلى',
+  'ضحكتك بتنوّر اليوم كله',
+  'مهما بعدنا أو قربنا، إنتي دايماً بالبال',
+  'وجودك بحياتي من أحلى النعم',
+];
+
+/* Volume of the background music (0.0 → 1.0) */
+const MUSIC_VOLUME = 0.55;
+
+/* ════════════════════════════════════════════════════════════════
+   🌲 The experience — a moonlit forest clearing, one white lily
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  const isSmallScreen = Math.min(innerWidth, innerHeight) < 700;
+
+  /* ── Renderer / scene / camera ────────────────────────────── */
+  const container = document.getElementById('scene-container');
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a1122, 0.024);
+
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 300);
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  } catch (e) {
+    document.getElementById('intro').innerHTML =
+      '<h1 style="font-size:1.4rem">متصفحك ما بيدعم WebGL 😢</h1>';
+    return;
+  }
+  // capped pixel ratio = sharp but never laggy on high-DPI phones
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSmallScreen ? 1.8 : 2));
+  renderer.setSize(innerWidth, innerHeight);
+  container.appendChild(renderer.domElement);
+
+  const HEAD_Y = 4.3;
+  const lookTarget = new THREE.Vector3(0, HEAD_Y, 0);
+
+  /* Camera state machine: 'front' → 'transition' → 'top' */
+  const FRONT_VIEW = { radius: 11.0, phi: 1.34, theta: 0 };
+  const TOP_VIEW   = { radius: 10.0, phi: 0.10, theta: 0.6 };
+  const TRANSITION_SECS = 2.8;
+  const camState = { mode: 'front', theta: 0, tStart: 0, from: null, to: null };
+
+  function applySpherical(radius, phi, theta) {
+    camera.position.set(
+      radius * Math.sin(phi) * Math.sin(theta),
+      HEAD_Y + radius * Math.cos(phi),
+      radius * Math.sin(phi) * Math.cos(theta)
+    );
+    camera.lookAt(lookTarget);
+  }
+  applySpherical(FRONT_VIEW.radius, FRONT_VIEW.phi, FRONT_VIEW.theta);
+
+  /* ── Lights ───────────────────────────────────────────────── */
+  scene.add(new THREE.AmbientLight(0x2c3658, 1.0));
+
+  const moonLight = new THREE.DirectionalLight(0xaabfff, 0.9);
+  moonLight.position.set(-18, 26, -20);
+  scene.add(moonLight);
+
+  const warmGlow = new THREE.PointLight(0xffd9a0, 1.1, 28);
+  warmGlow.position.set(3, 7, 4);
+  scene.add(warmGlow);
+
+  const underGlow = new THREE.PointLight(0xbcd0ff, 0.45, 14);
+  underGlow.position.set(0, 1.5, 2.5);
+  scene.add(underGlow);
+
+  /* ── Shared textures ──────────────────────────────────────── */
+  function makeGlowTexture(inner, outer) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, inner);
+    g.addColorStop(0.35, outer);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  }
+  const glowTexWarm = makeGlowTexture('rgba(255,246,214,1)', 'rgba(255,214,140,0.5)');
+  const glowTexCool = makeGlowTexture('rgba(235,242,255,1)', 'rgba(160,190,255,0.4)');
+  const glowTexTeal = makeGlowTexture('rgba(210,255,240,1)', 'rgba(110,230,190,0.4)');
+
+  /* ── Night sky dome with a hand-painted gradient ──────────── */
+  (function buildSky() {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 512;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0.0, '#04060e');   // zenith
+    g.addColorStop(0.45, '#0a1128');
+    g.addColorStop(0.72, '#14224a');  // glow near the horizon
+    g.addColorStop(0.88, '#1b3055');
+    g.addColorStop(1.0, '#0d1830');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 512);
+    const tex = new THREE.CanvasTexture(c);
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(140, 24, 16),
+      new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false })
+    );
+    scene.add(sky);
+  })();
+
+  /* ── The moon: bright core + wide halo ────────────────────── */
+  (function buildMoon() {
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexCool, color: 0xdde8ff, transparent: true, opacity: 0.55,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+    }));
+    halo.scale.set(58, 58, 1);
+    halo.position.set(-55, 62, -95);
+    scene.add(halo);
+
+    const core = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexCool, color: 0xffffff, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+    }));
+    core.scale.set(17, 17, 1);
+    core.position.set(-55, 62, -95);
+    scene.add(core);
+  })();
+
+  /* ── Moonlit forest floor (radial gradient texture) ───────── */
+  (function buildGround() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(256, 256, 20, 256, 256, 256);
+    g.addColorStop(0, '#1d2c47');     // moonlit clearing under the lily
+    g.addColorStop(0.35, '#121e36');
+    g.addColorStop(0.7, '#0a1222');
+    g.addColorStop(1, '#060a14');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+    const tex = new THREE.CanvasTexture(c);
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(90, 48),
+      new THREE.MeshBasicMaterial({ map: tex })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+  })();
+
+  /* ── Geometry merging helper (whole forest = 1 draw call) ─── */
+  function mergePositions(parts) {
+    let total = 0;
+    for (const p of parts) total += p.attributes.position.array.length;
+    const pos = new Float32Array(total);
+    let off = 0;
+    for (const p of parts) {
+      pos.set(p.attributes.position.array, off);
+      off += p.attributes.position.array.length;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    return geo;
+  }
+
+  /* ── Pine forest: two silhouette rings for depth ──────────── */
+  function addPine(parts, x, z, h) {
+    let g = new THREE.CylinderGeometry(h * 0.028, h * 0.05, h * 0.3, 5).toNonIndexed();
+    g.translate(x, h * 0.15, z);
+    parts.push(g);
+    for (let i = 0; i < 3; i++) {
+      const tierH = h * 0.42 * (1 - i * 0.16);
+      const tierR = h * 0.21 * (1 - i * 0.24);
+      const baseY = h * 0.22 + h * 0.62 * (i / 3);
+      g = new THREE.ConeGeometry(tierR, tierH, 7).toNonIndexed();
+      g.translate(x, baseY + tierH / 2, z);
+      parts.push(g);
+    }
+  }
+  function buildForestRing(rMin, rMax, count, hMin, hMax, color) {
+    const parts = [];
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+      const r = rMin + Math.random() * (rMax - rMin);
+      addPine(parts, Math.cos(a) * r, Math.sin(a) * r, hMin + Math.random() * (hMax - hMin));
+    }
+    const mesh = new THREE.Mesh(
+      mergePositions(parts),
+      new THREE.MeshBasicMaterial({ color })
+    );
+    scene.add(mesh);
+  }
+  buildForestRing(26, 44, 34, 10, 20, 0x081020);  // far, tall, darkest
+  buildForestRing(14, 22, 18, 6, 12, 0x0d1930);   // near, lighter = depth
+
+  /* ── Grass tufts around the clearing (1 merged mesh) ──────── */
+  (function buildGrass() {
+    const bladeCount = isSmallScreen ? 160 : 240;
+    const pos = new Float32Array(bladeCount * 9);
+    for (let i = 0; i < bladeCount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 0.9 + Math.pow(Math.random(), 0.7) * 9;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const h = 0.25 + Math.random() * 0.5;
+      const w = 0.03 + Math.random() * 0.04;
+      const lean = (Math.random() - 0.5) * 0.3;
+      const o = i * 9;
+      pos[o]     = x - w; pos[o + 1] = 0;  pos[o + 2] = z;
+      pos[o + 3] = x + w; pos[o + 4] = 0;  pos[o + 5] = z;
+      pos[o + 6] = x + lean; pos[o + 7] = h; pos[o + 8] = z + lean;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const grass = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color: 0x11241e, side: THREE.DoubleSide,
+    }));
+    scene.add(grass);
+  })();
+
+  /* ── ✨ Glowing forest mushrooms (magical detail) ──────────── */
+  const mushroomGlows = [];
+  (function buildMushrooms() {
+    const capMat = new THREE.MeshBasicMaterial({ color: 0x8ef0d2 });
+    const stemMat = new THREE.MeshBasicMaterial({ color: 0x9fb8ac });
+    const capGeo = new THREE.SphereGeometry(0.09, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    const stemGeo = new THREE.CylinderGeometry(0.028, 0.038, 0.13, 6);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.4;
+      const r = 4.5 + Math.random() * 6;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const s = 0.7 + Math.random() * 1.1;
+
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.position.set(x, 0.065 * s, z);
+      stem.scale.setScalar(s);
+      scene.add(stem);
+
+      const cap = new THREE.Mesh(capGeo, capMat);
+      cap.position.set(x, 0.12 * s, z);
+      cap.scale.setScalar(s);
+      scene.add(cap);
+
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTexTeal, color: 0x9df5da, transparent: true, opacity: 0.35,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      glow.scale.set(1.1 * s, 1.1 * s, 1);
+      glow.position.set(x, 0.22 * s, z);
+      scene.add(glow);
+      mushroomGlows.push({ glow, phase: Math.random() * Math.PI * 2, speed: 0.6 + Math.random() });
+    }
+  })();
+
+  /* ── Drifting ground mist ─────────────────────────────────── */
+  const mists = [];
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexCool, color: 0x93a9d6, transparent: true,
+      opacity: 0.045 + Math.random() * 0.035,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    m.scale.set(16 + Math.random() * 10, 4.5 + Math.random() * 2.5, 1);
+    m.position.set((Math.random() - 0.5) * 30, 0.8 + Math.random() * 1.2, (Math.random() - 0.5) * 24);
+    scene.add(m);
+    mists.push({ sprite: m, speed: 0.12 + Math.random() * 0.22 });
+  }
+
+  /* ── Starfield ────────────────────────────────────────────── */
+  const stars = (function () {
+    const n = 320;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const r = 100 + Math.random() * 30;
+      const t = Math.random() * Math.PI * 2;
+      const p = Math.acos(Math.random() * 0.9);
+      pos[i * 3]     = r * Math.sin(p) * Math.cos(t);
+      pos[i * 3 + 1] = Math.abs(r * Math.cos(p)) + 4;
+      pos[i * 3 + 2] = r * Math.sin(p) * Math.sin(t);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 1.1, map: glowTexCool, transparent: true, opacity: 0.9,
+      depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+    }));
+    scene.add(pts);
+    return pts;
+  })();
+
+  /* ── Floating pollen / forest dust rising in the moonlight ── */
+  const pollen = (function () {
+    const n = isSmallScreen ? 90 : 140;
+    const pos = new Float32Array(n * 3);
+    const speed = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      pos[i * 3]     = (Math.random() - 0.5) * 22;
+      pos[i * 3 + 1] = 0.2 + Math.random() * 7;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 18;
+      speed[i] = 0.1 + Math.random() * 0.25;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 0.32, map: glowTexCool, transparent: true, opacity: 0.5,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    scene.add(pts);
+    return { pts, pos, speed, n };
+  })();
+
+  /* ══════════════════════════════════════════════════════════
+     🌸 THE WHITE LILY
+     ══════════════════════════════════════════════════════════ */
+  const flower = new THREE.Group();
+  scene.add(flower);
+
+  function createPetalGeometry(length, width, curl, cup) {
+    const geo = new THREE.PlaneGeometry(1, 1, 10, 22);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const t = pos.getY(i) + 0.5;
+      const silhouette =
+        Math.pow(Math.sin(Math.PI * Math.min(t, 0.999)), 0.8) *
+        (0.45 + 0.55 * (1 - t * 0.45));
+      const nx = x * width * silhouette;
+      const ny = t * length;
+      const nz = Math.pow(t, 1.8) * curl + nx * nx * cup;
+      pos.setXYZ(i, nx, ny, nz);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  const petalMatOuter = new THREE.MeshStandardMaterial({
+    color: 0xffffff, emissive: 0x2e3450, roughness: 0.5, side: THREE.DoubleSide,
+  });
+  const petalMatInner = new THREE.MeshStandardMaterial({
+    color: 0xfff6ea, emissive: 0x3a3524, emissiveIntensity: 0.6,
+    roughness: 0.45, side: THREE.DoubleSide,
+  });
+
+  const head = new THREE.Group();
+  head.position.y = HEAD_Y;
+  flower.add(head);
+
+  const petalPivots = [];
+  function addPetalRing(count, tilt, length, width, curl, cup, angleOffset, material) {
+    const geo = createPetalGeometry(length, width, curl, cup);
+    for (let i = 0; i < count; i++) {
+      const pivot = new THREE.Group();
+      pivot.rotation.y = angleOffset + (i / count) * Math.PI * 2;
+      const petal = new THREE.Mesh(geo, material);
+      petal.rotation.x = tilt;
+      pivot.add(petal);
+      head.add(pivot);
+      petalPivots.push({ petal, baseTilt: tilt, phase: Math.random() * Math.PI * 2 });
+    }
+  }
+  addPetalRing(3, 0.85, 2.1, 1.35, 1.15, 0.55, 0,           petalMatOuter);
+  addPetalRing(3, 0.55, 1.95, 1.2, 0.9,  0.6,  Math.PI / 3, petalMatInner);
+
+  /* Stamens + pistil */
+  const filamentMat = new THREE.MeshStandardMaterial({ color: 0xf2eccf, roughness: 0.7 });
+  const antherMat = new THREE.MeshStandardMaterial({
+    color: 0xd4973e, emissive: 0x6b4413, emissiveIntensity: 0.7, roughness: 0.5,
+  });
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    const filGeo = new THREE.CylinderGeometry(0.018, 0.026, 1.25, 6);
+    filGeo.translate(0, 0.62, 0);
+    const fil = new THREE.Mesh(filGeo, filamentMat);
+    fil.rotation.set(Math.cos(a) * 0.32, 0, Math.sin(a) * 0.32);
+    head.add(fil);
+
+    const anther = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), antherMat);
+    anther.scale.set(0.75, 1.7, 0.75);
+    anther.position.set(Math.sin(a) * 0.4, 1.22, Math.cos(a) * 0.4);
+    head.add(anther);
+  }
+  const pistilGeo = new THREE.CylinderGeometry(0.025, 0.035, 1.45, 6);
+  pistilGeo.translate(0, 0.72, 0);
+  head.add(new THREE.Mesh(pistilGeo, filamentMat));
+
+  /* ✨ Breathing halo around the petals */
+  const aura = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexCool, color: 0xcfe0ff, transparent: true, opacity: 0.3,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  aura.scale.set(7, 7, 1);
+  aura.position.y = 0.6;
+  head.add(aura);
+
+  const auraWarm = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexWarm, color: 0xfff1cf, transparent: true, opacity: 0.18,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  auraWarm.scale.set(4, 4, 1);
+  auraWarm.position.y = 0.5;
+  head.add(auraWarm);
+
+  /* Stem + leaves */
+  const stemCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.18, 1.4, 0.06),
+    new THREE.Vector3(-0.12, 2.9, -0.05),
+    new THREE.Vector3(0, HEAD_Y, 0),
+  ]);
+  flower.add(new THREE.Mesh(
+    new THREE.TubeGeometry(stemCurve, 24, 0.07, 8),
+    new THREE.MeshStandardMaterial({ color: 0x35573a, roughness: 0.8 })
+  ));
+  const leafGeo = createPetalGeometry(1.6, 0.9, 0.55, 0.9);
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: 0x2f5236, roughness: 0.85, side: THREE.DoubleSide,
+  });
+  [[1.1, 0.9, 1.9], [1.8, -2.2, 1.75]].forEach(([y, ry, rx]) => {
+    const pivot = new THREE.Group();
+    pivot.position.y = y;
+    pivot.rotation.y = ry;
+    const leaf = new THREE.Mesh(leafGeo, leafMat);
+    leaf.rotation.x = rx;
+    pivot.add(leaf);
+    flower.add(pivot);
+  });
+
+  /* Invisible generous tap target around the flower head */
+  const hitSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(2.6, 12, 12),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+  );
+  hitSphere.position.y = HEAD_Y + 0.5;
+  flower.add(hitSphere);
+
+  /* ── Fireflies ────────────────────────────────────────────── */
+  const fireflies = [];
+  const fireflyCount = isSmallScreen ? 26 : 40;
+  for (let i = 0; i < fireflyCount; i++) {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexWarm, color: 0xffe9a8, transparent: true,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    const scale = 0.35 + Math.random() * 0.45;
+    sprite.scale.set(scale, scale, 1);
+    const home = new THREE.Vector3(
+      (Math.random() - 0.5) * 24,
+      0.6 + Math.random() * 9,
+      (Math.random() - 0.5) * 20
+    );
+    sprite.position.copy(home);
+    scene.add(sprite);
+    fireflies.push({
+      sprite, home,
+      fx: 0.2 + Math.random() * 0.5, fy: 0.2 + Math.random() * 0.4, fz: 0.2 + Math.random() * 0.5,
+      ax: 1.2 + Math.random() * 2.2, ay: 0.5 + Math.random() * 1.1, az: 1.2 + Math.random() * 2.2,
+      flicker: 1.2 + Math.random() * 2.5,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     ✨ 2D overlay: stardust trail + shooting stars
+     ══════════════════════════════════════════════════════════ */
+  const fx = document.getElementById('fx-canvas');
+  const fctx = fx.getContext('2d');
+  const DUST_CAP = isSmallScreen ? 160 : 260;
+  let dust = [];
+  let shootingStars = [];
+  let nextShootingStar = 4;
+
+  function spawnDust(x, y, amount) {
+    for (let i = 0; i < amount && dust.length < DUST_CAP; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 0.3 + Math.random() * 1.4;
+      dust.push({
+        x, y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 0.4,
+        life: 1, decay: 0.014 + Math.random() * 0.02,
+        size: 1.2 + Math.random() * 2.4,
+        warm: Math.random() > 0.4,
+      });
+    }
+  }
+
+  function updateFx(dt) {
+    fctx.clearRect(0, 0, fx.width, fx.height);
+    fctx.globalCompositeOperation = 'lighter';
+
+    dust = dust.filter(p => p.life > 0);
+    for (const p of dust) {
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.01;
+      p.life -= p.decay;
+      const r = Math.max(p.size * p.life * 4, 0.5);
+      const g = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      const col = p.warm ? '255,235,180' : '190,210,255';
+      g.addColorStop(0, 'rgba(' + col + ',' + (0.9 * p.life) + ')');
+      g.addColorStop(1, 'rgba(' + col + ',0)');
+      fctx.fillStyle = g;
+      fctx.beginPath();
+      fctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      fctx.fill();
+    }
+
+    nextShootingStar -= dt;
+    if (nextShootingStar <= 0) {
+      nextShootingStar = 7 + Math.random() * 9;
+      const fromLeft = Math.random() > 0.5;
+      shootingStars.push({
+        x: fromLeft ? -40 : fx.width + 40,
+        y: fx.height * (0.05 + Math.random() * 0.3),
+        vx: (fromLeft ? 1 : -1) * (7 + Math.random() * 5),
+        vy: 2 + Math.random() * 1.6,
+        life: 1,
+      });
+    }
+    shootingStars = shootingStars.filter(s => s.life > 0);
+    for (const s of shootingStars) {
+      s.x += s.vx; s.y += s.vy;
+      s.life -= 0.008;
+      if (s.x < -80 || s.x > fx.width + 80) s.life = 0;
+      const g = fctx.createLinearGradient(s.x - s.vx * 10, s.y - s.vy * 10, s.x, s.y);
+      g.addColorStop(0, 'rgba(200,220,255,0)');
+      g.addColorStop(1, 'rgba(255,250,235,' + (0.85 * s.life) + ')');
+      fctx.strokeStyle = g;
+      fctx.lineWidth = 1.6;
+      fctx.beginPath();
+      fctx.moveTo(s.x - s.vx * 10, s.y - s.vy * 10);
+      fctx.lineTo(s.x, s.y);
+      fctx.stroke();
+    }
+    fctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     💬 Messages: orbit the flower → tap one → it becomes a
+        bubble she can drag and throw around the screen 🫧
+     ══════════════════════════════════════════════════════════ */
+  const msgContainer = document.getElementById('messages');
+  const msgItems = [];
+  let messagesActive = false;
+
+  MESSAGES.forEach((text, i) => {
+    const el = document.createElement('div');
+    el.className = 'msg';
+    el.textContent = text;
+    msgContainer.appendChild(el);
+    const ring = i % 2;
+    const m = {
+      el, mode: 'orbit',
+      ring,
+      radius: ring === 0 ? 0.295 : 0.44,
+      speed: ring === 0 ? 0.05 : -0.038,
+      baseAngle: (Math.floor(i / 2) / Math.ceil(MESSAGES.length / 2)) * Math.PI * 2
+                 + ring * (Math.PI / MESSAGES.length),
+      bobPhase: Math.random() * Math.PI * 2,
+      // bubble physics
+      x: 0, y: 0, curX: 0, curY: 0, vx: 0, vy: 0,
+      halfW: 60, halfH: 30,
+      dragging: false, pointerId: -1, lastPX: 0, lastPY: 0, lastPT: 0,
+    };
+    msgItems.push(m);
+
+    /* tap a message → it pops into a bubble and follows her finger */
+    el.addEventListener('pointerdown', (e) => {
+      if (!messagesActive || !el.classList.contains('visible')) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (m.mode === 'orbit') {
+        m.mode = 'bubble';
+        m.x = m.curX; m.y = m.curY;
+        m.vx = 0; m.vy = 0;
+        el.classList.add('bubble');
+        // measure the bubble after it renders (for wall bouncing)
+        requestAnimationFrame(() => {
+          m.halfW = el.offsetWidth / 2;
+          m.halfH = el.offsetHeight / 2;
+        });
+        spawnDust(e.clientX, e.clientY, 16);
+      }
+      m.dragging = true;
+      m.pointerId = e.pointerId;
+      m.lastPX = e.clientX; m.lastPY = e.clientY;
+      m.lastPT = performance.now();
+      m.vx = 0; m.vy = 0;
+      if (el.setPointerCapture) { try { el.setPointerCapture(e.pointerId); } catch (_) {} }
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!m.dragging || e.pointerId !== m.pointerId) return;
+      const now = performance.now();
+      const dtMs = Math.max(now - m.lastPT, 1);
+      const dx = e.clientX - m.lastPX;
+      const dy = e.clientY - m.lastPY;
+      m.x += dx; m.y += dy;
+      // smoothed velocity in px/frame → a real "throw" on release
+      m.vx = 0.55 * m.vx + 0.45 * (dx / dtMs) * 16.7;
+      m.vy = 0.55 * m.vy + 0.45 * (dy / dtMs) * 16.7;
+      m.lastPX = e.clientX; m.lastPY = e.clientY; m.lastPT = now;
+      spawnDust(e.clientX, e.clientY, 1);
+    });
+    const release = (e) => {
+      if (e.pointerId === m.pointerId) { m.dragging = false; m.pointerId = -1; }
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+  });
+
+  const projV = new THREE.Vector3();
+  function headScreenPosition() {
+    projV.set(0, HEAD_Y + 0.5, 0).project(camera);
+    return {
+      x: (projV.x * 0.5 + 0.5) * innerWidth,
+      y: (-projV.y * 0.5 + 0.5) * innerHeight,
+    };
+  }
+
+  function updateMessages(t) {
+    if (!messagesActive) return;
+    const c = headScreenPosition();
+    const minDim = Math.min(innerWidth, innerHeight);
+    const stretchX = innerWidth > innerHeight ? 1.35 : 1;
+    for (const m of msgItems) {
+      if (m.mode === 'orbit') {
+        const a = m.baseAngle + t * m.speed;
+        m.curX = c.x + Math.cos(a) * m.radius * minDim * stretchX;
+        m.curY = c.y + Math.sin(a) * m.radius * minDim * 0.86 +
+                 Math.sin(t * 0.8 + m.bobPhase) * 6;
+      } else {
+        if (!m.dragging) {
+          m.x += m.vx; m.y += m.vy;
+          m.vx *= 0.988; m.vy *= 0.988;
+          // weightless space-drift wobble
+          m.vx += Math.sin(t * 0.9 + m.bobPhase) * 0.006;
+          m.vy += Math.cos(t * 1.1 + m.bobPhase) * 0.006;
+          // soft bounce off the screen edges
+          const padX = m.halfW + 6, padY = m.halfH + 6;
+          if (m.x < padX)              { m.x = padX;              m.vx = Math.abs(m.vx) * 0.72; }
+          if (m.x > innerWidth - padX) { m.x = innerWidth - padX; m.vx = -Math.abs(m.vx) * 0.72; }
+          if (m.y < padY)              { m.y = padY;              m.vy = Math.abs(m.vy) * 0.72; }
+          if (m.y > innerHeight - padY){ m.y = innerHeight - padY; m.vy = -Math.abs(m.vy) * 0.72; }
+        }
+        m.curX = m.x; m.curY = m.y;
+      }
+      m.el.style.transform =
+        'translate(-50%,-50%) translate(' + m.curX + 'px,' + m.curY + 'px)';
+    }
+  }
+
+  function revealMessages() {
+    messagesActive = true;
+    msgItems.forEach((m, i) => {
+      setTimeout(() => m.el.classList.add('visible'), 600 + i * 650);
+    });
+    const totalDelay = 600 + MESSAGES.length * 650;
+    setTimeout(() => {
+      const bh = document.getElementById('bubble-hint');
+      bh.classList.add('visible');
+      setTimeout(() => bh.classList.add('gone'), 7000);
+    }, totalDelay + 400);
+    setTimeout(() => {
+      document.getElementById('gallery-btn').classList.add('visible');
+    }, totalDelay + 1800);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     🖼️ Memories gallery (photos + videos, swipe to browse)
+     ══════════════════════════════════════════════════════════ */
+  const gallery = document.getElementById('gallery');
+  const gImg = document.getElementById('g-img');
+  const gVideo = document.getElementById('g-video');
+  const gCaption = document.getElementById('g-caption');
+  let gIndex = 0;
+
+  function showMemory(i) {
+    if (MEMORIES.length === 0) return;
+    gIndex = (i + MEMORIES.length) % MEMORIES.length;
+    const src = MEMORIES[gIndex];
+    const isVideo = /\.(mp4|webm|mov)$/i.test(src);
+    gVideo.pause();
+    if (isVideo) {
+      gImg.style.display = 'none';
+      gVideo.style.display = 'block';
+      gVideo.src = src;
+    } else {
+      gVideo.style.display = 'none';
+      gVideo.removeAttribute('src');
+      gImg.style.display = 'block';
+      gImg.style.opacity = 0;
+      gImg.src = src;
+      gImg.onload = () => { gImg.style.opacity = 1; };
+    }
+    gCaption.textContent = (gIndex + 1) + ' / ' + MEMORIES.length;
+  }
+
+  document.getElementById('gallery-btn').addEventListener('click', () => {
+    gallery.classList.add('open');
+    if (MEMORIES.length === 0) {
+      document.getElementById('g-empty').style.display = 'block';
+      document.getElementById('g-prev').style.display = 'none';
+      document.getElementById('g-next').style.display = 'none';
+    } else {
+      showMemory(gIndex);
+    }
+  });
+  document.getElementById('g-close').addEventListener('click', () => {
+    gVideo.pause();
+    gallery.classList.remove('open');
+  });
+  document.getElementById('g-prev').addEventListener('click', () => showMemory(gIndex - 1));
+  document.getElementById('g-next').addEventListener('click', () => showMemory(gIndex + 1));
+
+  let swipeX = null;
+  gallery.addEventListener('touchstart', e => { swipeX = e.touches[0].clientX; }, { passive: true });
+  gallery.addEventListener('touchend', e => {
+    if (swipeX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeX;
+    if (Math.abs(dx) > 45) showMemory(gIndex + (dx < 0 ? 1 : -1));
+    swipeX = null;
+  }, { passive: true });
+
+  /* ══════════════════════════════════════════════════════════
+     🎵 Music + intro unlock
+     ══════════════════════════════════════════════════════════ */
+  const music = document.getElementById('bg-music');
+  music.volume = MUSIC_VOLUME;
+
+  const intro = document.getElementById('intro');
+  const hint = document.getElementById('hint');
+  intro.addEventListener('pointerdown', () => {
+    intro.classList.add('hidden');
+    hint.classList.add('visible');
+    music.play().catch(() => { /* no music file linked yet — fine */ });
+  }, { once: true });
+
+  /* ══════════════════════════════════════════════════════════
+     👆 Tap the flower → glide to the top-down view
+     ══════════════════════════════════════════════════════════ */
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  window.addEventListener('pointerdown', (e) => {
+    spawnDust(e.clientX, e.clientY, 14);
+    if (camState.mode !== 'front') return;
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    if (raycaster.intersectObjects(flower.children, true).length > 0) {
+      camState.mode = 'transition';
+      camState.tStart = clock.getElapsedTime();
+      camState.from = { ...FRONT_VIEW };
+      camState.to = { ...TOP_VIEW };
+      hint.classList.add('gone');
+    }
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (e.pressure > 0 || e.pointerType === 'mouse') spawnDust(e.clientX, e.clientY, 2);
+  });
+  document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  /* ══════════════════════════════════════════════════════════
+     🌙 Main loop
+     ══════════════════════════════════════════════════════════ */
+  const clock = new THREE.Clock();
+  let lastT = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    const dt = Math.min(t - lastT, 0.05);
+    lastT = t;
+
+    /* the lily is always alive: breathing, swaying, fluttering */
+    head.scale.setScalar(1 + 0.028 * Math.sin(t * 1.25));
+    flower.rotation.z = 0.045 * Math.sin(t * 0.6);
+    flower.rotation.x = 0.03 * Math.sin(t * 0.45 + 1.3);
+    for (const p of petalPivots) {
+      p.petal.rotation.x = p.baseTilt + 0.05 * Math.sin(t * 1.1 + p.phase);
+    }
+    aura.material.opacity = 0.26 + 0.1 * Math.sin(t * 1.25);
+    auraWarm.material.opacity = 0.14 + 0.07 * Math.sin(t * 1.25 + 1);
+    warmGlow.intensity = 1.0 + 0.25 * Math.sin(t * 0.9);
+
+    /* fireflies drift + flicker */
+    for (const f of fireflies) {
+      f.sprite.position.set(
+        f.home.x + Math.sin(t * f.fx + f.phase) * f.ax,
+        f.home.y + Math.sin(t * f.fy + f.phase * 2) * f.ay,
+        f.home.z + Math.cos(t * f.fz + f.phase) * f.az
+      );
+      f.sprite.material.opacity = 0.25 + 0.75 * Math.abs(Math.sin(t * f.flicker + f.phase));
+    }
+
+    /* mushroom glow pulsing */
+    for (const m of mushroomGlows) {
+      m.glow.material.opacity = 0.22 + 0.2 * Math.abs(Math.sin(t * m.speed + m.phase));
+    }
+
+    /* mist drifts sideways and wraps around */
+    for (const m of mists) {
+      m.sprite.position.x += m.speed * dt;
+      if (m.sprite.position.x > 22) m.sprite.position.x = -22;
+    }
+
+    /* pollen rises slowly and wraps */
+    {
+      const arr = pollen.pts.geometry.attributes.position;
+      for (let i = 0; i < pollen.n; i++) {
+        let y = arr.getY(i) + pollen.speed[i] * dt;
+        if (y > 7.5) y = 0.2;
+        arr.setY(i, y);
+      }
+      arr.needsUpdate = true;
+    }
+
+    stars.rotation.y = t * 0.003;
+
+    /* camera state machine */
+    if (camState.mode === 'transition') {
+      const k = Math.min((t - camState.tStart) / TRANSITION_SECS, 1);
+      const e = easeInOut(k);
+      applySpherical(
+        lerp(camState.from.radius, camState.to.radius, e),
+        lerp(camState.from.phi, camState.to.phi, e),
+        lerp(camState.from.theta, camState.to.theta, e)
+      );
+      if (k >= 1) {
+        camState.mode = 'top';
+        camState.theta = camState.to.theta;
+        revealMessages();
+      }
+    } else if (camState.mode === 'top') {
+      camState.theta += dt * 0.045;   // dreamy slow orbit above the lily
+      applySpherical(TOP_VIEW.radius, TOP_VIEW.phi, camState.theta);
+    } else {
+      applySpherical(
+        FRONT_VIEW.radius,
+        FRONT_VIEW.phi + 0.012 * Math.sin(t * 0.3),
+        FRONT_VIEW.theta + 0.02 * Math.sin(t * 0.22)
+      );
+    }
+
+    updateMessages(t);
+    updateFx(dt);
+    renderer.render(scene, camera);
+  }
+
+  /* ── Resize ───────────────────────────────────────────────── */
+  function resize() {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    fx.width = innerWidth;
+    fx.height = innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  animate();
+})();
+</script>
+</body>
+</html>
