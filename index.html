@@ -49,14 +49,18 @@
     font-family: 'Amiri', serif;
     font-size: clamp(2.4rem, 10vw, 4.5rem);
     color: #f7f3e8;
-    animation: introGlow 3s ease-in-out infinite;
+    animation: introGlow 3s ease-in-out infinite, introIn 2.4s ease both;
   }
   #intro p {
     margin-top: 1.2rem;
     font-size: clamp(.9rem, 4vw, 1.15rem);
     color: rgba(215, 222, 245, .75);
     letter-spacing: .5px;
-    animation: softPulse 2.4s ease-in-out infinite;
+    animation: softPulse 2.4s ease-in-out infinite, introIn 2.4s .8s ease both;
+  }
+  @keyframes introIn {
+    from { opacity: 0; transform: translateY(16px) scale(.97); filter: blur(6px); }
+    to   { opacity: 1; transform: none; filter: blur(0); }
   }
   @keyframes introGlow {
     0%, 100% { text-shadow: 0 0 25px rgba(255,240,200,.35), 0 0 55px rgba(160,190,255,.2); }
@@ -100,12 +104,13 @@
       0 0 26px rgba(150, 180, 255, .35),
       0 2px 8px rgba(0, 0, 0, .85);
     opacity: 0;
-    transition: opacity 2.4s ease;
+    filter: blur(7px);
+    transition: opacity 2.6s ease, filter 2.6s ease;
     will-change: transform;
     pointer-events: auto;      /* messages are touchable */
     cursor: grab;
   }
-  .msg.visible { opacity: 1; }
+  .msg.visible { opacity: 1; filter: blur(0); }
 
   /* 🫧 When she taps a message it becomes a bubble she can throw —
      just a soft halo of light around the words, nothing solid */
@@ -186,9 +191,10 @@
       0 2px 8px rgba(0, 0, 0, .85);
     opacity: 0;
     transform: translateY(12px);
-    transition: opacity 2.2s ease, transform 2.2s ease;
+    filter: blur(6px);
+    transition: opacity 2.2s ease, transform 2.2s ease, filter 2.2s ease;
   }
-  .moon-line.visible { opacity: 1; transform: none; }
+  .moon-line.visible { opacity: 1; transform: none; filter: blur(0); }
   .moon-line:last-child {
     font-size: clamp(1.3rem, 5.8vw, 1.9rem);
     color: #fff8ea;
@@ -280,7 +286,11 @@
     transform-style: preserve-3d;
     will-change: transform;
   }
-  #page-leaf { display: none; z-index: 5; }
+  #page-leaf {
+    display: none; z-index: 5;
+    /* the turning page throws a moving shadow on the one beneath */
+    filter: drop-shadow(-16px 10px 18px rgba(30, 18, 5, .4));
+  }
   .leaf-face {
     position: absolute; inset: 0;
     backface-visibility: hidden;
@@ -714,6 +724,16 @@ const MUSIC_VOLUME = 0.55;
     g.addColorStop(1, '#060a14');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 512, 512);
+    // scatter faint speckles so the floor reads as earth, not plastic
+    for (let i = 0; i < 700; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.pow(Math.random(), 0.6) * 250;
+      const l = Math.random();
+      ctx.fillStyle = l > 0.5
+        ? 'rgba(160, 185, 220, ' + (0.05 + Math.random() * 0.06) + ')'
+        : 'rgba(0, 0, 0, ' + (0.1 + Math.random() * 0.12) + ')';
+      ctx.fillRect(256 + Math.cos(a) * r, 256 + Math.sin(a) * r, 1.6, 1.6);
+    }
     const tex = new THREE.CanvasTexture(c);
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(90, 48),
@@ -837,12 +857,18 @@ const MUSIC_VOLUME = 0.55;
     m.scale.set(16 + Math.random() * 10, 4.5 + Math.random() * 2.5, 1);
     m.position.set((Math.random() - 0.5) * 30, 0.8 + Math.random() * 1.2, (Math.random() - 0.5) * 24);
     scene.add(m);
-    mists.push({ sprite: m, speed: 0.12 + Math.random() * 0.22 });
+    mists.push({
+      sprite: m,
+      speed: 0.12 + Math.random() * 0.22,
+      base: m.material.opacity,
+      phase: Math.random() * Math.PI * 2,
+    });
   }
 
-  /* ── Starfield ────────────────────────────────────────────── */
-  const stars = (function () {
-    const n = 320;
+  /* ── Starfield: three layers of different sizes & warmth ──── */
+  const stars = new THREE.Group();
+  const starMats = [];
+  function addStarCloud(n, size, opacity, tint, phase) {
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
       const r = 100 + Math.random() * 30;
@@ -854,13 +880,17 @@ const MUSIC_VOLUME = 0.55;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 1.1, map: glowTexCool, transparent: true, opacity: 0.9,
+    const mat = new THREE.PointsMaterial({
+      size, map: glowTexCool, color: tint, transparent: true, opacity,
       depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
-    }));
-    scene.add(pts);
-    return pts;
-  })();
+    });
+    starMats.push({ mat, base: opacity, phase, speed: 1.3 + Math.random() });
+    stars.add(new THREE.Points(geo, mat));
+  }
+  addStarCloud(240, 0.85, 0.75, 0xffffff, 0);      // fine dust of stars
+  addStarCloud(60, 1.9, 0.95, 0xcfe0ff, 2.1);      // the bright cold ones
+  addStarCloud(36, 1.3, 0.8, 0xffe4c4, 4.2);       // a few warm ones
+  scene.add(stars);
 
   /* ── Floating pollen / forest dust rising in the moonlight ── */
   const pollen = (function () {
@@ -907,10 +937,54 @@ const MUSIC_VOLUME = 0.55;
     return geo;
   }
 
+  /* hand-painted petal skin: greenish throat at the base fading to
+     pure white, a centre vein and fine branching veins */
+  const petalTex = (function () {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 512;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 512, 0, 0);   // base → tip
+    g.addColorStop(0, '#dee9c9');
+    g.addColorStop(0.22, '#f2f2e2');
+    g.addColorStop(0.55, '#ffffff');
+    g.addColorStop(1, '#ffffff');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 512);
+    // soft shading toward the edges gives the cup depth
+    const sg = ctx.createLinearGradient(0, 0, 256, 0);
+    sg.addColorStop(0, 'rgba(188, 198, 214, .28)');
+    sg.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+    sg.addColorStop(1, 'rgba(188, 198, 214, .28)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, 0, 256, 512);
+    // centre vein
+    ctx.strokeStyle = 'rgba(168, 184, 148, .4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(128, 512);
+    ctx.quadraticCurveTo(128, 250, 128, 26);
+    ctx.stroke();
+    // fine branching veins
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(174, 190, 158, .2)';
+    for (let i = 0; i < 7; i++) {
+      const y = 468 - i * 62;
+      for (const s of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(128, y);
+        ctx.quadraticCurveTo(128 + s * 55, y - 42, 128 + s * 96, y - 96);
+        ctx.stroke();
+      }
+    }
+    return new THREE.CanvasTexture(c);
+  })();
+
   const petalMatOuter = new THREE.MeshStandardMaterial({
+    map: petalTex,
     color: 0xffffff, emissive: 0x2e3450, roughness: 0.5, side: THREE.DoubleSide,
   });
   const petalMatInner = new THREE.MeshStandardMaterial({
+    map: petalTex,
     color: 0xfff6ea, emissive: 0x3a3524, emissiveIntensity: 0.6,
     roughness: 0.45, side: THREE.DoubleSide,
   });
@@ -920,7 +994,8 @@ const MUSIC_VOLUME = 0.55;
   flower.add(head);
 
   const petalPivots = [];
-  function addPetalRing(count, tilt, length, width, curl, cup, angleOffset, material) {
+  let bloomT = -1;   // set when she enters — the lily opens from a bud
+  function addPetalRing(count, tilt, length, width, curl, cup, angleOffset, material, ring) {
     const geo = createPetalGeometry(length, width, curl, cup);
     for (let i = 0; i < count; i++) {
       const pivot = new THREE.Group();
@@ -929,11 +1004,14 @@ const MUSIC_VOLUME = 0.55;
       petal.rotation.x = tilt;
       pivot.add(petal);
       head.add(pivot);
-      petalPivots.push({ petal, baseTilt: tilt, phase: Math.random() * Math.PI * 2 });
+      petalPivots.push({
+        petal, baseTilt: tilt, ring,
+        phase: Math.random() * Math.PI * 2,
+      });
     }
   }
-  addPetalRing(3, 0.85, 2.1, 1.35, 1.15, 0.55, 0,           petalMatOuter);
-  addPetalRing(3, 0.55, 1.95, 1.2, 0.9,  0.6,  Math.PI / 3, petalMatInner);
+  addPetalRing(3, 0.85, 2.1, 1.35, 1.15, 0.55, 0,           petalMatOuter, 0);
+  addPetalRing(3, 0.55, 1.95, 1.2, 0.9,  0.6,  Math.PI / 3, petalMatInner, 1);
 
   /* Stamens + pistil */
   const filamentMat = new THREE.MeshStandardMaterial({ color: 0xf2eccf, roughness: 0.7 });
@@ -987,6 +1065,7 @@ const MUSIC_VOLUME = 0.55;
   ));
   const leafGeo = createPetalGeometry(1.6, 0.9, 0.55, 0.9);
   const leafMat = new THREE.MeshStandardMaterial({
+    map: petalTex,        // tinted dark green → subtle leaf veins for free
     color: 0x2f5236, roughness: 0.85, side: THREE.DoubleSide,
   });
   [[1.1, 0.9, 1.9], [1.8, -2.2, 1.75]].forEach(([y, ry, rx]) => {
@@ -1017,13 +1096,53 @@ const MUSIC_VOLUME = 0.55;
     sprite.position.copy(home);
     scene.add(sprite);
     fireflies.push({
-      sprite, home,
+      sprite, home, baseScale: scale,
       fx: 0.2 + Math.random() * 0.5, fy: 0.2 + Math.random() * 0.4, fz: 0.2 + Math.random() * 0.5,
       ax: 1.2 + Math.random() * 2.2, ay: 0.5 + Math.random() * 1.1, az: 1.2 + Math.random() * 2.2,
       flicker: 1.2 + Math.random() * 2.5,
       phase: Math.random() * Math.PI * 2,
     });
   }
+
+  /* ── Loose white petals drifting down from the lily ───────── */
+  const fallingPetals = [];
+  (function buildFallingPetals() {
+    // a soft white petal-shaped sprite
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(32, 64, 4, 32, 64, 60);
+    g.addColorStop(0, 'rgba(255,255,252,.95)');
+    g.addColorStop(0.55, 'rgba(248,248,244,.75)');
+    g.addColorStop(1, 'rgba(240,242,240,0)');
+    ctx.fillStyle = g;
+    ctx.save();
+    ctx.translate(32, 64);
+    ctx.scale(0.5, 1);
+    ctx.beginPath();
+    ctx.arc(0, 0, 58, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    const tex = new THREE.CanvasTexture(c);
+    for (let i = 0; i < 6; i++) {
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex, transparent: true, opacity: 0.85, depthWrite: false,
+        rotation: Math.random() * Math.PI * 2,
+      }));
+      sprite.scale.set(0.2, 0.34, 1);
+      const x0 = (Math.random() - 0.5) * 2.4;
+      const z0 = (Math.random() - 0.5) * 2.4;
+      sprite.position.set(x0, Math.random() * HEAD_Y, z0);
+      scene.add(sprite);
+      fallingPetals.push({
+        sprite, x0, z0,
+        speed: 0.28 + Math.random() * 0.22,
+        sway: 0.5 + Math.random() * 0.7,
+        phase: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 1.6,
+      });
+    }
+  })();
 
   /* ══════════════════════════════════════════════════════════
      ✨ 2D overlay: stardust trail + shooting stars
@@ -1434,6 +1553,7 @@ const MUSIC_VOLUME = 0.55;
     intro.classList.add('hidden');
     hint.classList.add('visible');
     music.play().catch(() => { /* no music file linked yet — fine */ });
+    bloomT = clock.getElapsedTime();   // 🌸 the lily blooms open for her
     setTimeout(() => { entered = true; }, 700);
   }, { once: true });
 
@@ -1487,25 +1607,52 @@ const MUSIC_VOLUME = 0.55;
     const dt = Math.min(t - lastT, 0.05);
     lastT = t;
 
-    /* the lily is always alive: breathing, swaying, fluttering */
-    head.scale.setScalar(1 + 0.028 * Math.sin(t * 1.25));
+    /* the lily is always alive: it blooms open when she enters,
+       then keeps breathing, swaying and fluttering forever */
+    const bloomK = bloomT < 0 ? 0 : Math.min((t - bloomT) / 5, 1);
+    const breath = 1 + 0.028 * Math.sin(t * 1.25);
+    head.scale.setScalar((0.9 + 0.1 * easeInOut(bloomK)) * breath);
     flower.rotation.z = 0.045 * Math.sin(t * 0.6);
     flower.rotation.x = 0.03 * Math.sin(t * 0.45 + 1.3);
     for (const p of petalPivots) {
-      p.petal.rotation.x = p.baseTilt + 0.05 * Math.sin(t * 1.1 + p.phase);
+      // inner ring wakes up a moment after the outer one
+      const k = bloomT < 0 ? 0
+        : Math.min(Math.max((t - bloomT - p.ring * 0.8) / 4.5, 0), 1);
+      const open = 0.42 + 0.58 * easeInOut(k);
+      p.petal.rotation.x = p.baseTilt * open + 0.05 * k * Math.sin(t * 1.1 + p.phase);
     }
     aura.material.opacity = 0.26 + 0.1 * Math.sin(t * 1.25);
+    const auraS = 7 + 0.5 * Math.sin(t * 1.25);        // the halo swells as it breathes
+    aura.scale.set(auraS, auraS, 1);
     auraWarm.material.opacity = 0.14 + 0.07 * Math.sin(t * 1.25 + 1);
     warmGlow.intensity = 1.0 + 0.25 * Math.sin(t * 0.9);
 
-    /* fireflies drift + flicker */
+    /* fireflies drift, flicker, and swell with their own light */
     for (const f of fireflies) {
       f.sprite.position.set(
         f.home.x + Math.sin(t * f.fx + f.phase) * f.ax,
         f.home.y + Math.sin(t * f.fy + f.phase * 2) * f.ay,
         f.home.z + Math.cos(t * f.fz + f.phase) * f.az
       );
-      f.sprite.material.opacity = 0.25 + 0.75 * Math.abs(Math.sin(t * f.flicker + f.phase));
+      const fl = Math.abs(Math.sin(t * f.flicker + f.phase));
+      f.sprite.material.opacity = 0.25 + 0.75 * fl;
+      const fs = f.baseScale * (0.75 + 0.35 * fl);
+      f.sprite.scale.set(fs, fs, 1);
+    }
+
+    /* loose petals spiral slowly down from the flower */
+    for (const fp of fallingPetals) {
+      const s = fp.sprite;
+      s.position.y -= fp.speed * dt;
+      s.position.x = fp.x0 + Math.sin(t * fp.sway + fp.phase) * 0.9;
+      s.position.z = fp.z0 + Math.cos(t * fp.sway * 0.8 + fp.phase) * 0.7;
+      s.material.rotation += fp.spin * dt;
+      s.material.opacity = Math.min(s.position.y * 1.4, 0.85);   // melt into the grass
+      if (s.position.y < 0.04) {
+        s.position.y = HEAD_Y + 0.4;
+        fp.x0 = (Math.random() - 0.5) * 2.4;
+        fp.z0 = (Math.random() - 0.5) * 2.4;
+      }
     }
 
     /* mushroom glow pulsing */
@@ -1513,10 +1660,11 @@ const MUSIC_VOLUME = 0.55;
       m.glow.material.opacity = 0.22 + 0.2 * Math.abs(Math.sin(t * m.speed + m.phase));
     }
 
-    /* mist drifts sideways and wraps around */
+    /* mist drifts sideways, wraps around, and breathes */
     for (const m of mists) {
       m.sprite.position.x += m.speed * dt;
       if (m.sprite.position.x > 22) m.sprite.position.x = -22;
+      m.sprite.material.opacity = m.base * (0.7 + 0.3 * Math.sin(t * 0.3 + m.phase));
     }
 
     /* pollen rises slowly and wraps */
@@ -1531,7 +1679,9 @@ const MUSIC_VOLUME = 0.55;
     }
 
     stars.rotation.y = t * 0.003;
-    stars.material.opacity = 0.8 + 0.15 * Math.sin(t * 1.9);   // gentle twinkle
+    for (const s of starMats) {   // each layer twinkles to its own rhythm
+      s.mat.opacity = s.base * (0.8 + 0.2 * Math.sin(t * s.speed + s.phase));
+    }
 
     /* night clouds slide across the moon and wrap around */
     for (const cl of moonClouds) {
@@ -1559,7 +1709,11 @@ const MUSIC_VOLUME = 0.55;
       }
     } else if (camState.mode === 'top') {
       camState.theta += dt * 0.045;   // dreamy slow orbit above the lily
-      applySpherical(TOP_VIEW.radius, TOP_VIEW.phi, camState.theta);
+      applySpherical(
+        TOP_VIEW.radius + 0.35 * Math.sin(t * 0.22),   // gentle rise and fall
+        TOP_VIEW.phi,
+        camState.theta
+      );
     } else if (camState.mode === 'toMoon' || camState.mode === 'fromMoon') {
       const k = Math.min((t - camState.tStart) / 3.2, 1);
       const e = easeInOut(k);
