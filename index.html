@@ -233,38 +233,56 @@
     position: fixed; inset: 0; z-index: 60;
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at 50% 62%,
-      rgba(28, 20, 8, .6), rgba(3, 5, 14, .97) 78%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+      rgba(28, 20, 8, .78), rgba(3, 5, 14, .985) 78%);
     opacity: 0; pointer-events: none;
     transition: opacity .7s ease;
   }
   #gallery.open { opacity: 1; pointer-events: auto; }
 
+  /* a real open book: two pages meeting at a spine in the middle */
   #book {
     position: relative;
-    width: min(72vw, 330px);
-    aspect-ratio: 10 / 13.4;
-    perspective: 1700px;
+    width: min(92vw, 600px);
+    aspect-ratio: 17 / 11;
+    perspective: 2000px;
     filter: drop-shadow(0 24px 42px rgba(0, 0, 0, .65));
     cursor: pointer;
   }
-  .page, #page-leaf, #cover {
-    position: absolute; inset: 0;
-    border-radius: 10px 3px 3px 10px;   /* spine on the right — an Arabic book */
+  .half {
+    position: absolute; top: 0; height: 100%; width: 50%;
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 0;
+    transition: opacity .9s ease .4s;   /* pages appear as the cover lifts */
   }
-  .page { overflow: hidden; }
+  #book.opened .half { opacity: 1; }
+  #page-right { right: 0; border-radius: 3px 12px 12px 3px; }
+  #page-left  { left: 0;  border-radius: 12px 3px 3px 12px; }
   .paper {
     background:
       radial-gradient(ellipse at 30% 18%, rgba(255,255,255,.4), transparent 55%),
       linear-gradient(160deg, #f8efdd 0%, #f0e4c8 55%, #e6d5b1 100%);
-    box-shadow: inset -16px 0 24px rgba(120, 90, 40, .25),
-                inset 2px 2px 8px rgba(255, 255, 255, .5);
   }
-  #page-base { display: flex; flex-direction: column; align-items: center; z-index: 1; }
-  #page-base img, #page-leaf img {
-    width: 84%; height: 74%;
-    margin-top: 7%;
+  .paper-r { box-shadow: inset 16px 0 24px rgba(120, 90, 40, .25),
+                         inset -2px 2px 8px rgba(255, 255, 255, .5); }
+  .paper-l { box-shadow: inset -16px 0 24px rgba(120, 90, 40, .25),
+                         inset 2px 2px 8px rgba(255, 255, 255, .5); }
+  /* the spine crease between the two pages */
+  #book::before {
+    content: '';
+    position: absolute; left: 50%; top: 1%; bottom: 1%;
+    width: 16px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg,
+      rgba(60, 40, 15, 0), rgba(60, 40, 15, .4), rgba(60, 40, 15, 0));
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .9s ease .4s;
+  }
+  #book.opened::before { opacity: 1; }
+  #book img {
+    width: 86%; height: 72%;
+    margin-top: 6%;
     object-fit: cover;
     border: 5px solid #fffdf4;
     border-radius: 3px;
@@ -273,23 +291,24 @@
     background: #e8e0cc;
   }
   .page-num {
-    margin-top: auto; margin-bottom: 4%;
+    margin-top: auto; margin-bottom: 3%;
     font-family: 'Amiri', serif;
     color: #7a5f3a;
-    font-size: .95rem;
+    font-size: .9rem;
     letter-spacing: 1px;
     direction: ltr;
   }
-  /* the leaf that physically turns over the spine */
-  #page-leaf, #cover {
+  /* the leaf that turns over the spine: it lives on the left half
+     and rotates around the spine onto the right half */
+  #page-leaf {
+    position: absolute; top: 0; left: 0;
+    width: 50%; height: 100%;
+    border-radius: 12px 3px 3px 12px;
     transform-origin: right center;
     transform-style: preserve-3d;
     will-change: transform;
-  }
-  #page-leaf {
-    display: none; z-index: 5;
-    /* the turning page throws a moving shadow on the one beneath */
-    filter: drop-shadow(-16px 10px 18px rgba(30, 18, 5, .4));
+    display: none; z-index: 6;
+    filter: drop-shadow(-14px 10px 16px rgba(30, 18, 5, .38));
   }
   .leaf-face {
     position: absolute; inset: 0;
@@ -301,9 +320,19 @@
   }
   .leaf-back-face { transform: rotateY(180deg); }
 
-  /* the leather cover, closed until she opens the book */
-  #cover { z-index: 10; transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
-  #cover.open { transform: rotateY(178deg); }
+  /* the leather cover sits on the right half (an Arabic book) and
+     swings open across the spine */
+  #cover {
+    position: absolute; top: 0; right: 0;
+    width: 50%; height: 100%;
+    border-radius: 3px 12px 12px 3px;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    will-change: transform;
+    z-index: 10;
+    transition: transform 1.6s cubic-bezier(.45,.05,.2,1);
+  }
+  #cover.open { transform: rotateY(-178deg); }
   #cover.away { visibility: hidden; }
   .cover-front {
     justify-content: center;
@@ -442,23 +471,27 @@
   </div>
 
   <div id="book">
-    <!-- the open page underneath -->
-    <div id="page-base" class="page paper">
-      <img id="base-img" alt="">
-      <div class="page-num" id="page-num"></div>
+    <!-- the two open pages -->
+    <div id="page-right" class="half paper paper-r">
+      <img id="img-right" alt="">
+      <div class="page-num" id="num-right"></div>
     </div>
-    <!-- the leaf that turns -->
+    <div id="page-left" class="half paper paper-l">
+      <img id="img-left" alt="">
+      <div class="page-num" id="num-left"></div>
+    </div>
+    <!-- the leaf that turns over the spine -->
     <div id="page-leaf">
-      <div class="leaf-face paper"><img id="leaf-img" alt=""></div>
-      <div class="leaf-face leaf-back-face paper"></div>
+      <div class="leaf-face paper paper-l"><img id="leaf-front-img" alt=""></div>
+      <div class="leaf-face leaf-back-face paper paper-r"><img id="leaf-back-img" alt=""></div>
     </div>
-    <!-- the closed leather cover -->
+    <!-- the closed leather cover (right half — an Arabic book) -->
     <div id="cover">
       <div class="leaf-face cover-front">
         <div class="cover-title">ذكرياتنا</div>
         <div class="cover-sub">لسيدرا</div>
       </div>
-      <div class="leaf-face leaf-back-face paper"></div>
+      <div class="leaf-face leaf-back-face paper paper-r"></div>
     </div>
   </div>
 
@@ -467,12 +500,12 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     🎵 MUSIC — put your mp3 next to this file and replace the
-     filename below. It starts on her first tap (autoplay is
-     blocked on phones, so the intro tap is the unlock).
+     🎵 MUSIC — music.mp3 in this folder. preload="none" is important:
+     the file is large, so it streams when she taps instead of
+     blocking the whole page load.
      ══════════════════════════════════════════════════════════════ -->
-<audio id="bg-music" loop preload="auto">
-  <source src="YOUR_MUSIC_FILE.mp3" type="audio/mpeg">
+<audio id="bg-music" loop preload="none">
+  <source src="music.mp3" type="audio/mpeg">
 </audio>
 
 <!-- Three.js r128 (stable build, works on all mobile browsers) -->
@@ -553,7 +586,7 @@ const MUSIC_VOLUME = 0.55;
     return;
   }
   // capped pixel ratio = sharp but never laggy on high-DPI phones
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSmallScreen ? 1.8 : 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSmallScreen ? 1.5 : 1.75));
   renderer.setSize(innerWidth, innerHeight);
   container.appendChild(renderer.domElement);
 
@@ -904,7 +937,7 @@ const MUSIC_VOLUME = 0.55;
 
   /* ── Drifting ground mist ─────────────────────────────────── */
   const mists = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     const m = new THREE.Sprite(new THREE.SpriteMaterial({
       map: glowTexCool, color: 0x93a9d6, transparent: true,
       opacity: 0.045 + Math.random() * 0.035,
@@ -950,7 +983,7 @@ const MUSIC_VOLUME = 0.55;
 
   /* ── Floating pollen / forest dust rising in the moonlight ── */
   const pollen = (function () {
-    const n = isSmallScreen ? 90 : 140;
+    const n = isSmallScreen ? 70 : 110;
     const pos = new Float32Array(n * 3);
     const speed = new Float32Array(n);
     for (let i = 0; i < n; i++) {
@@ -1209,7 +1242,7 @@ const MUSIC_VOLUME = 0.55;
 
   /* ── Fireflies ────────────────────────────────────────────── */
   const fireflies = [];
-  const fireflyCount = isSmallScreen ? 26 : 40;
+  const fireflyCount = isSmallScreen ? 18 : 32;
   for (let i = 0; i < fireflyCount; i++) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
       map: glowTexWarm, color: 0xffe9a8, transparent: true,
@@ -1295,7 +1328,23 @@ const MUSIC_VOLUME = 0.55;
      ══════════════════════════════════════════════════════════ */
   const fx = document.getElementById('fx-canvas');
   const fctx = fx.getContext('2d');
-  const DUST_CAP = isSmallScreen ? 160 : 260;
+  const DUST_CAP = isSmallScreen ? 120 : 180;
+  // pre-rendered glow dots: drawImage is ~20x cheaper per particle
+  // than building a radial gradient every frame
+  function makeDustSprite(col) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 32;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(' + col + ',1)');
+    g.addColorStop(0.4, 'rgba(' + col + ',.45)');
+    g.addColorStop(1, 'rgba(' + col + ',0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 32, 32);
+    return c;
+  }
+  const dustWarm = makeDustSprite('255,235,180');
+  const dustCool = makeDustSprite('190,210,255');
   let dust = [];
   let shootingStars = [];
   let nextShootingStar = 4;
@@ -1339,15 +1388,10 @@ const MUSIC_VOLUME = 0.55;
       p.vy += 0.01;
       p.life -= p.decay;
       const r = Math.max(p.size * p.life * 4, 0.5);
-      const g = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-      const col = p.warm ? '255,235,180' : '190,210,255';
-      g.addColorStop(0, 'rgba(' + col + ',' + (0.9 * p.life) + ')');
-      g.addColorStop(1, 'rgba(' + col + ',0)');
-      fctx.fillStyle = g;
-      fctx.beginPath();
-      fctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      fctx.fill();
+      fctx.globalAlpha = Math.max(p.life, 0) * 0.9;
+      fctx.drawImage(p.warm ? dustWarm : dustCool, p.x - r, p.y - r, r * 2, r * 2);
     }
+    fctx.globalAlpha = 1;
 
     nextShootingStar -= dt;
     if (nextShootingStar <= 0) {
@@ -1518,31 +1562,49 @@ const MUSIC_VOLUME = 0.55;
         like a real Arabic book: forward = left page turns right)
      ══════════════════════════════════════════════════════════ */
   const gallery = document.getElementById('gallery');
+  const bookEl = document.getElementById('book');
   const cover = document.getElementById('cover');
   const leaf = document.getElementById('page-leaf');
-  const leafImg = document.getElementById('leaf-img');
-  const baseImg = document.getElementById('base-img');
-  const pageNum = document.getElementById('page-num');
-  const book = { idx: 0, busy: false };
+  const leafFImg = document.getElementById('leaf-front-img');
+  const leafBImg = document.getElementById('leaf-back-img');
+  const imgR = document.getElementById('img-right');
+  const imgL = document.getElementById('img-left');
+  const numR = document.getElementById('num-right');
+  const numL = document.getElementById('num-left');
+  const book = { k: 0, busy: false };   // spread k shows photos 2k (right) & 2k+1 (left)
 
-  function setPage(i) {
-    baseImg.src = MEMORIES[i];
-    pageNum.textContent = (i + 1) + ' / ' + MEMORIES.length;
-    // preload neighbours so the flip is never blank
-    [i - 1, i + 1].forEach(j => {
-      if (j >= 0 && j < MEMORIES.length) { const im = new Image(); im.src = MEMORIES[j]; }
-    });
+  function photoAt(i) {
+    return (i >= 0 && i < MEMORIES.length) ? MEMORIES[i] : null;
+  }
+  function setImg(el, src) {
+    if (src) { el.src = src; el.style.visibility = 'visible'; }
+    else { el.removeAttribute('src'); el.style.visibility = 'hidden'; }
+  }
+  function setSpread(k) {
+    setImg(imgR, photoAt(2 * k));
+    setImg(imgL, photoAt(2 * k + 1));
+    numR.textContent = photoAt(2 * k)     ? (2 * k + 1) + ' / ' + MEMORIES.length : '';
+    numL.textContent = photoAt(2 * k + 1) ? (2 * k + 2) + ' / ' + MEMORIES.length : '';
+    // preload the neighbouring spreads so flips are never blank
+    for (const j of [2 * k + 2, 2 * k + 3, 2 * k - 1, 2 * k - 2]) {
+      const s = photoAt(j);
+      if (s) { const im = new Image(); im.src = s; }
+    }
   }
 
-  function flipPage(dir) {          // +1 forward, -1 back
+  function flipSpread(dir) {           // +1 forward, -1 back
     if (book.busy || !cover.classList.contains('open')) return;
-    const target = book.idx + dir;
-    if (target < 0 || target >= MEMORIES.length) return;
+    if (dir > 0 && 2 * (book.k + 1) >= MEMORIES.length) return;
+    if (dir < 0 && book.k <= 0) return;
     book.busy = true;
+    const k = book.k;
     if (dir > 0) {
-      // current photo lifts and turns away, revealing the next
-      leafImg.src = MEMORIES[book.idx];
-      setPage(target);
+      // the left page lifts and turns over the spine onto the right,
+      // carrying the current photo on its front and the next on its back
+      setImg(leafFImg, photoAt(2 * k + 1));
+      setImg(leafBImg, photoAt(2 * k + 2));
+      setImg(imgL, photoAt(2 * k + 3));    // revealed beneath the lifting leaf
+      numL.textContent = photoAt(2 * k + 3) ? (2 * k + 4) + ' / ' + MEMORIES.length : '';
       leaf.style.transition = 'none';
       leaf.style.transform = 'rotateY(0deg)';
       leaf.style.display = 'block';
@@ -1551,8 +1613,11 @@ const MUSIC_VOLUME = 0.55;
         leaf.style.transform = 'rotateY(178deg)';
       }));
     } else {
-      // a turned page comes back, carrying the previous photo
-      leafImg.src = MEMORIES[target];
+      // a turned page swings back from the right onto the left
+      setImg(leafFImg, photoAt(2 * k - 1));
+      setImg(leafBImg, photoAt(2 * k));
+      setImg(imgR, photoAt(2 * k - 2));    // revealed beneath on the right
+      numR.textContent = (2 * k - 1) + ' / ' + MEMORIES.length;
       leaf.style.transition = 'none';
       leaf.style.transform = 'rotateY(178deg)';
       leaf.style.display = 'block';
@@ -1562,18 +1627,22 @@ const MUSIC_VOLUME = 0.55;
       }));
     }
     setTimeout(() => {
-      book.idx = target;
-      if (dir < 0) setPage(target);
+      book.k += dir;
+      setSpread(book.k);
       leaf.style.display = 'none';
       book.busy = false;
     }, 1000);
   }
 
+  function openCover() {
+    cover.classList.add('open');
+    bookEl.classList.add('opened');
+  }
+
   document.getElementById('gallery-btn').addEventListener('click', () => {
     gallery.classList.add('open');
-    setPage(book.idx);
-    // the cover swings open by itself a moment later
-    setTimeout(() => cover.classList.add('open'), 900);
+    setSpread(book.k);
+    setTimeout(openCover, 900);   // the cover swings open on its own
   });
   // once fully open, tuck the cover away so it doesn't stick out
   cover.addEventListener('transitionend', () => {
@@ -1582,17 +1651,20 @@ const MUSIC_VOLUME = 0.55;
   document.getElementById('g-close').addEventListener('click', (e) => {
     e.stopPropagation();
     gallery.classList.remove('open');
-    setTimeout(() => cover.classList.remove('open', 'away'), 700);
+    setTimeout(() => {
+      cover.classList.remove('open', 'away');
+      bookEl.classList.remove('opened');
+    }, 700);
   });
-  document.getElementById('g-next').addEventListener('click', () => flipPage(1));
-  document.getElementById('g-prev').addEventListener('click', () => flipPage(-1));
+  document.getElementById('g-next').addEventListener('click', () => flipSpread(1));
+  document.getElementById('g-prev').addEventListener('click', () => flipSpread(-1));
 
   // tapping the book: closed → open it; open → left half turns
-  // the page forward, right half turns it back
-  document.getElementById('book').addEventListener('click', (e) => {
-    if (!cover.classList.contains('open')) { cover.classList.add('open'); return; }
-    const r = e.currentTarget.getBoundingClientRect();
-    flipPage(e.clientX < r.left + r.width / 2 ? 1 : -1);
+  // forward, right half turns back
+  bookEl.addEventListener('click', (e) => {
+    if (!cover.classList.contains('open')) { openCover(); return; }
+    const r = bookEl.getBoundingClientRect();
+    flipSpread(e.clientX < r.left + r.width / 2 ? 1 : -1);
   });
 
   // swipe: dragging toward the right turns the page forward (RTL)
@@ -1601,7 +1673,7 @@ const MUSIC_VOLUME = 0.55;
   gallery.addEventListener('touchend', e => {
     if (swipeGX === null) return;
     const dx = e.changedTouches[0].clientX - swipeGX;
-    if (Math.abs(dx) > 45) flipPage(dx > 0 ? 1 : -1);
+    if (Math.abs(dx) > 45) flipSpread(dx > 0 ? 1 : -1);
     swipeGX = null;
   }, { passive: true });
 
@@ -1691,14 +1763,23 @@ const MUSIC_VOLUME = 0.55;
      ══════════════════════════════════════════════════════════ */
   const music = document.getElementById('bg-music');
   music.volume = MUSIC_VOLUME;
+  let musicStarted = false;
+  // start buffering quietly in the background once the page has
+  // settled, so the song is ready the moment she taps
+  setTimeout(() => {
+    if (!musicStarted) { music.preload = 'auto'; music.load(); }
+  }, 2500);
 
   const intro = document.getElementById('intro');
   const hint = document.getElementById('hint');
   let entered = false;   // guards against the intro tap counting twice
+  let sceneLive = false; // no 3D work until she enters — a calm, fast load
   intro.addEventListener('pointerdown', () => {
     intro.classList.add('hidden');
     hint.classList.add('visible');
-    music.play().catch(() => { /* no music file linked yet — fine */ });
+    musicStarted = true;
+    music.play().catch(() => { /* stream not ready yet — retries below */ });
+    sceneLive = true;                  // rendering begins now
     bloomT = clock.getElapsedTime();   // 🌸 the lily blooms open for her
     setTimeout(() => { entered = true; }, 700);
   }, { once: true });
@@ -1733,7 +1814,11 @@ const MUSIC_VOLUME = 0.55;
     else if (dy > 70 && camState.mode === 'moon') exitMoonMode();
   });
 
+  let lastTrailT = 0;
   window.addEventListener('pointermove', e => {
+    const now = performance.now();
+    if (now - lastTrailT < 28) return;   // throttle: touch events can fire 120×/s
+    lastTrailT = now;
     if (e.pressure > 0 || e.pointerType === 'mouse') spawnDust(e.clientX, e.clientY, 2);
   });
   document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
@@ -1749,6 +1834,9 @@ const MUSIC_VOLUME = 0.55;
 
   function animate() {
     requestAnimationFrame(animate);
+    // nothing to draw while the intro covers the screen, and the
+    // whole 3D scene sleeps while she's reading the book
+    if (!sceneLive || gallery.classList.contains('open')) return;
     const t = clock.getElapsedTime();
     const dt = Math.min(t - lastT, 0.05);
     lastT = t;
@@ -1921,6 +2009,7 @@ const MUSIC_VOLUME = 0.55;
   }
   window.addEventListener('resize', resize);
   resize();
+  renderer.render(scene, camera);   // warm-up: shaders compile behind the intro
   animate();
 })();
 </script>
