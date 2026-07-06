@@ -87,6 +87,33 @@
   .hint.visible { opacity: 1; }
   .hint.gone    { opacity: 0 !important; }
 
+  #music-btn {
+    position: fixed; left: 1rem; top: 1rem;
+    z-index: 25;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border: 1px solid rgba(235, 240, 255, .28);
+    border-radius: 50%;
+    background: rgba(8, 12, 27, .48);
+    color: rgba(245, 239, 224, .9);
+    font: 700 1.25rem/1 'Tajawal', sans-serif;
+    box-shadow: 0 0 18px rgba(150, 185, 255, .22), inset 0 0 14px rgba(255, 255, 255, .05);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(.9);
+    transition: opacity .7s ease, transform .7s ease, border-color .4s ease, color .4s ease;
+  }
+  #music-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+  #music-btn.playing {
+    color: #fff3c8;
+    border-color: rgba(255, 235, 176, .55);
+    box-shadow: 0 0 22px rgba(255, 220, 150, .36), inset 0 0 14px rgba(255, 255, 255, .06);
+  }
+
   /* ── Floating Arabic messages ───────────────────────────── */
   #messages { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
   .msg {
@@ -445,6 +472,7 @@
 <div id="hint" class="hint">اضغطي على الوردة</div>
 <div id="bubble-hint" class="hint">المسي أي رسالة وحرّكيها متل الفقاعة</div>
 <div id="messages"></div>
+<button id="music-btn" type="button" aria-label="Music" title="Music">♪</button>
 
 <button id="gallery-btn">ذكرياتنا</button>
 
@@ -560,7 +588,7 @@ const MESSAGES = [
 ];
 
 /* Volume of the background music (0.0 → 1.0) */
-const MUSIC_VOLUME = 0.55;
+const MUSIC_VOLUME = 0.82;
 
 /* ════════════════════════════════════════════════════════════════
    🌲 The experience — a moonlit forest clearing, one white lily
@@ -1762,12 +1790,62 @@ const MUSIC_VOLUME = 0.55;
      🎵 Music + intro unlock
      ══════════════════════════════════════════════════════════ */
   const music = document.getElementById('bg-music');
+  const musicBtn = document.getElementById('music-btn');
   music.volume = MUSIC_VOLUME;
   let musicStarted = false;
+  let musicWanted = false;
+
+  function syncMusicButton() {
+    musicBtn.classList.add('visible');
+    musicBtn.classList.toggle('playing', !music.paused && !music.ended);
+    musicBtn.textContent = music.paused ? '♪' : '♫';
+  }
+
+  function startMusic() {
+    musicWanted = true;
+    musicBtn.classList.add('visible');
+    music.preload = 'auto';
+    if (music.readyState === 0) music.load();
+
+    return music.play()
+      .then(() => {
+        musicStarted = true;
+        syncMusicButton();
+        return true;
+      })
+      .catch((err) => {
+        musicStarted = false;
+        syncMusicButton();
+        console.warn('Music could not start yet. Tap the music button to retry.', err);
+        return false;
+      });
+  }
+
+  music.addEventListener('play', syncMusicButton);
+  music.addEventListener('pause', syncMusicButton);
+  music.addEventListener('canplay', () => {
+    if (musicWanted && music.paused) startMusic();
+  });
+  music.addEventListener('error', () => {
+    musicStarted = false;
+    syncMusicButton();
+    console.warn('Music file could not be loaded:', music.error);
+  });
+  musicBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  musicBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (music.paused) startMusic();
+    else {
+      music.pause();
+      musicStarted = false;
+      syncMusicButton();
+    }
+  });
+
   // start buffering quietly in the background once the page has
   // settled, so the song is ready the moment she taps
   setTimeout(() => {
-    if (!musicStarted) { music.preload = 'auto'; music.load(); }
+    if (!musicWanted && !musicStarted) { music.preload = 'auto'; music.load(); }
   }, 2500);
 
   const intro = document.getElementById('intro');
@@ -1777,8 +1855,7 @@ const MUSIC_VOLUME = 0.55;
   intro.addEventListener('pointerdown', () => {
     intro.classList.add('hidden');
     hint.classList.add('visible');
-    musicStarted = true;
-    music.play().catch(() => { /* stream not ready yet — retries below */ });
+    startMusic();
     sceneLive = true;                  // rendering begins now
     bloomT = clock.getElapsedTime();   // 🌸 the lily blooms open for her
     setTimeout(() => { entered = true; }, 700);
