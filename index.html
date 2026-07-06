@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#060913">
-<title>إلى سِدرة 🤍</title>
+<title>إلى سيدرا 🌙🤍</title>
 
 <!-- Elegant Arabic fonts (Amiri for the messages, Tajawal for UI) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,6 +156,96 @@
     0%, 100% { box-shadow: 0 0 14px rgba(255,236,190,.25), inset 0 0 10px rgba(255,236,190,.08); }
     50%      { box-shadow: 0 0 32px rgba(255,236,190,.55), inset 0 0 16px rgba(255,236,190,.16); }
   }
+  #gallery-btn.gone { opacity: 0 !important; pointer-events: none !important; }
+
+  /* ── 🌙 The moon act ────────────────────────────────────── */
+  #moon-btn, #moon-back {
+    position: fixed; left: 50%;
+    transform: translateX(-50%) scale(.85);
+    z-index: 20;
+    padding: .75rem 1.9rem;
+    font-family: 'Amiri', serif;
+    font-size: clamp(.95rem, 4.2vw, 1.2rem);
+    color: #eef3ff;
+    background: rgba(190, 210, 255, .06);
+    border: 1px solid rgba(170, 200, 255, .45);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 2s ease, transform 2s ease;
+    animation: moonBtnGlow 3.2s ease-in-out infinite;
+  }
+  #moon-btn  { bottom: 13vh; }
+  #moon-back { bottom: 5vh; }
+  #moon-btn.visible, #moon-back.visible {
+    opacity: 1; pointer-events: auto;
+    transform: translateX(-50%) scale(1);
+  }
+  #moon-btn.gone { opacity: 0 !important; pointer-events: none !important; }
+  @keyframes moonBtnGlow {
+    0%, 100% { box-shadow: 0 0 14px rgba(170,200,255,.25), inset 0 0 10px rgba(170,200,255,.08); }
+    50%      { box-shadow: 0 0 34px rgba(170,200,255,.6),  inset 0 0 16px rgba(170,200,255,.18); }
+  }
+
+  #moon-lines {
+    position: fixed; left: 50%; bottom: 16vh;
+    transform: translateX(-50%);
+    z-index: 15;
+    width: 92vw;
+    display: flex; flex-direction: column; align-items: center;
+    gap: .55rem;
+    pointer-events: none;
+  }
+  .moon-line {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1.05rem, 4.6vw, 1.5rem);
+    font-weight: 700;
+    color: #f2f5ff;
+    direction: rtl;
+    text-align: center;
+    text-shadow:
+      0 0 12px rgba(180, 205, 255, .6),
+      0 0 34px rgba(140, 175, 255, .35),
+      0 2px 8px rgba(0, 0, 0, .85);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 2.2s ease, transform 2.2s ease;
+  }
+  .moon-line.visible { opacity: 1; transform: none; }
+  .moon-line:last-child {
+    font-size: clamp(1.3rem, 5.8vw, 1.9rem);
+    color: #fff8ea;
+    text-shadow:
+      0 0 16px rgba(255, 240, 205, .75),
+      0 0 44px rgba(170, 200, 255, .5),
+      0 2px 8px rgba(0, 0, 0, .85);
+  }
+
+  /* her name, shimmering beneath the moon itself */
+  #moon-name {
+    position: fixed; left: 0; top: 0;
+    z-index: 15;
+    font-family: 'Amiri', serif;
+    font-size: clamp(2.1rem, 10vw, 3.8rem);
+    font-weight: 700;
+    color: #fdfdff;
+    direction: rtl;
+    text-shadow:
+      0 0 18px rgba(220, 232, 255, .85),
+      0 0 55px rgba(170, 200, 255, .55),
+      0 0 110px rgba(150, 185, 255, .35);
+    opacity: 0;
+    transition: opacity 2.6s ease;
+    pointer-events: none;
+    will-change: transform;
+    animation: introGlow 3.4s ease-in-out infinite;
+  }
+  #moon-name.visible { opacity: 1; }
+
+  /* messages fade away softly while she's with the moon */
+  #messages { transition: opacity 1.2s ease; }
 
   /* ── Memories gallery (photos + videos) ─────────────────── */
   #gallery {
@@ -224,7 +314,7 @@
 
 <!-- Intro screen — her first tap here also starts the music -->
 <div id="intro">
-  <h1>إلى سِدرة 🤍</h1>
+  <h1>إلى سيدرا 🤍</h1>
   <p>المسي الشاشة للدخول ✨</p>
 </div>
 
@@ -233,6 +323,17 @@
 <div id="messages"></div>
 
 <button id="gallery-btn">ذكرياتنا ✨</button>
+
+<!-- 🌙 The moon act: camera leaves the flower and rises to the moon -->
+<button id="moon-btn">🌙 وفي شي كمان…</button>
+<div id="moon-lines">
+  <div class="moon-line">بتعرفي ليش بحب الليل؟</div>
+  <div class="moon-line">لأنو بيطلع فيه القمر…</div>
+  <div class="moon-line">بس القمر الحقيقي مو بالسما 🌙</div>
+  <div class="moon-line">إنتي القمر يا سيدرا</div>
+</div>
+<div id="moon-name">سيدرا 🌙</div>
+<button id="moon-back">🌸 رجوع للوردة</button>
 
 <div id="gallery">
   <div id="g-close">✕</div>
@@ -350,15 +451,23 @@ const MUSIC_VOLUME = 0.55;
   const TRANSITION_SECS = 2.8;
   const camState = { mode: 'front', theta: 0, tStart: 0, from: null, to: null };
 
-  function applySpherical(radius, phi, theta) {
-    camera.position.set(
+  function sphericalPos(radius, phi, theta) {
+    return new THREE.Vector3(
       radius * Math.sin(phi) * Math.sin(theta),
       HEAD_Y + radius * Math.cos(phi),
       radius * Math.sin(phi) * Math.cos(theta)
     );
+  }
+  function applySpherical(radius, phi, theta) {
+    camera.position.copy(sphericalPos(radius, phi, theta));
     camera.lookAt(lookTarget);
   }
   applySpherical(FRONT_VIEW.radius, FRONT_VIEW.phi, FRONT_VIEW.theta);
+
+  /* where the camera stands during the moon act (lily low in frame,
+     moon high above) and the animated look-at point */
+  const MOON_CAM_POS = new THREE.Vector3(5.5, 2.6, 11);
+  const lookAtV = new THREE.Vector3();
 
   /* ── Lights ───────────────────────────────────────────────── */
   scene.add(new THREE.AmbientLight(0x2c3658, 1.0));
@@ -413,23 +522,74 @@ const MUSIC_VOLUME = 0.55;
     scene.add(sky);
   })();
 
-  /* ── The moon: bright core + wide halo ────────────────────── */
+  /* ── 🌙 The moon: a real cratered sphere with halo & clouds ── */
+  const MOON_POS = new THREE.Vector3(-55, 62, -95);
+  let moonMesh, moonHalo, moonInner;
+  const moonClouds = [];
   (function buildMoon() {
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexCool, color: 0xdde8ff, transparent: true, opacity: 0.55,
-      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
-    }));
-    halo.scale.set(58, 58, 1);
-    halo.position.set(-55, 62, -95);
-    scene.add(halo);
+    // hand-painted moon surface: soft shading + gentle craters
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 256;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#eaf0fe';
+    ctx.fillRect(0, 0, 512, 256);
+    const shade = ctx.createLinearGradient(0, 0, 0, 256);
+    shade.addColorStop(0, 'rgba(255,255,255,.3)');
+    shade.addColorStop(1, 'rgba(140,160,210,.35)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 30; i++) {
+      const x = Math.random() * 512;
+      const y = 24 + Math.random() * 208;
+      const r = 4 + Math.random() * 20;
+      const g = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
+      g.addColorStop(0, 'rgba(160,176,214,.5)');
+      g.addColorStop(0.75, 'rgba(160,176,214,.2)');
+      g.addColorStop(1, 'rgba(160,176,214,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    moonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(7.5, 32, 24),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), fog: false })
+    );
+    moonMesh.position.copy(MOON_POS);
+    scene.add(moonMesh);
 
-    const core = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexCool, color: 0xffffff, transparent: true, opacity: 0.95,
+    moonInner = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexCool, color: 0xffffff, transparent: true, opacity: 0.75,
       blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
     }));
-    core.scale.set(17, 17, 1);
-    core.position.set(-55, 62, -95);
-    scene.add(core);
+    moonInner.scale.set(24, 24, 1);
+    moonInner.position.copy(MOON_POS);
+    scene.add(moonInner);
+
+    moonHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexCool, color: 0xdde8ff, transparent: true, opacity: 0.5,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+    }));
+    moonHalo.scale.set(64, 64, 1);
+    moonHalo.position.copy(MOON_POS);
+    scene.add(moonHalo);
+
+    // thin night clouds drifting slowly across the moon
+    for (let i = 0; i < 3; i++) {
+      const cloud = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTexCool, color: 0x131c36, transparent: true,
+        opacity: 0.3 + Math.random() * 0.2,
+        depthWrite: false, fog: false,
+      }));
+      cloud.scale.set(30 + Math.random() * 14, 6 + Math.random() * 4, 1);
+      cloud.position.set(
+        -95 + Math.random() * 70,
+        MOON_POS.y - 6 + Math.random() * 12,
+        MOON_POS.z + 7 + i * 2         // just in front of the moon
+      );
+      scene.add(cloud);
+      moonClouds.push({ sprite: cloud, speed: 0.5 + Math.random() * 0.7 });
+    }
   })();
 
   /* ── Moonlit forest floor (radial gradient texture) ───────── */
@@ -787,6 +947,21 @@ const MUSIC_VOLUME = 0.55;
     }
   }
 
+  /* a celebration burst (ignores the trail cap — it's a moment ✨) */
+  function spawnBurst(x, y, amount) {
+    for (let i = 0; i < amount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 0.8 + Math.random() * 3.4;
+      dust.push({
+        x, y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 0.6,
+        life: 1, decay: 0.007 + Math.random() * 0.012,
+        size: 1.4 + Math.random() * 2.6,
+        warm: Math.random() > 0.5,
+      });
+    }
+  }
+
   function updateFx(dt) {
     fctx.clearRect(0, 0, fx.width, fx.height);
     fctx.globalCompositeOperation = 'lighter';
@@ -965,6 +1140,9 @@ const MUSIC_VOLUME = 0.55;
     setTimeout(() => {
       document.getElementById('gallery-btn').classList.add('visible');
     }, totalDelay + 1800);
+    setTimeout(() => {
+      document.getElementById('moon-btn').classList.add('visible');
+    }, totalDelay + 3600);
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -1022,6 +1200,82 @@ const MUSIC_VOLUME = 0.55;
     if (Math.abs(dx) > 45) showMemory(gIndex + (dx < 0 ? 1 : -1));
     swipeX = null;
   }, { passive: true });
+
+  /* ══════════════════════════════════════════════════════════
+     🌙 THE MOON ACT — "إنتي القمر يا سيدرا"
+     The camera rises from the flower to the moon, four lines
+     appear, then her name shimmers beneath the moon itself.
+     ══════════════════════════════════════════════════════════ */
+  const moonBtn = document.getElementById('moon-btn');
+  const moonBack = document.getElementById('moon-back');
+  const moonName = document.getElementById('moon-name');
+  const moonLines = document.querySelectorAll('.moon-line');
+  let moonTimers = [];
+
+  function moonScreenPosition() {
+    projV.copy(MOON_POS).project(camera);
+    return {
+      x: (projV.x * 0.5 + 0.5) * innerWidth,
+      y: (-projV.y * 0.5 + 0.5) * innerHeight,
+    };
+  }
+
+  function positionMoonName() {
+    const p = moonScreenPosition();
+    const offset = Math.min(innerHeight * 0.17, 150);
+    moonName.style.transform =
+      'translate(-50%,-50%) translate(' + p.x + 'px,' + (p.y + offset) + 'px)';
+  }
+
+  function enterMoonMode() {
+    if (camState.mode !== 'top') return;
+    camState.mode = 'toMoon';
+    camState.tStart = clock.getElapsedTime();
+    camState.posFrom = camera.position.clone();
+    camState.posTo = MOON_CAM_POS.clone();
+    camState.lookFrom = lookTarget.clone();
+    camState.lookTo = MOON_POS.clone();
+    // messages & buttons drift away while she's with the moon
+    msgContainer.style.opacity = 0;
+    msgContainer.style.pointerEvents = 'none';
+    document.getElementById('gallery-btn').classList.add('gone');
+    moonBtn.classList.add('gone');
+    document.getElementById('bubble-hint').classList.add('gone');
+  }
+
+  function startMoonSequence() {
+    moonLines.forEach((el, i) => {
+      moonTimers.push(setTimeout(() => el.classList.add('visible'), 500 + i * 2300));
+    });
+    const nameAt = 500 + moonLines.length * 2300 + 500;
+    moonTimers.push(setTimeout(() => {
+      moonName.classList.add('visible');
+      const p = moonScreenPosition();
+      spawnBurst(p.x, p.y, 70);          // ✨ stardust bursts from the moon
+    }, nameAt));
+    moonTimers.push(setTimeout(() => moonBack.classList.add('visible'), nameAt + 2200));
+  }
+
+  function exitMoonMode() {
+    camState.mode = 'fromMoon';
+    camState.tStart = clock.getElapsedTime();
+    camState.posFrom = camera.position.clone();
+    camState.posTo = sphericalPos(TOP_VIEW.radius, TOP_VIEW.phi, camState.theta);
+    camState.lookFrom = MOON_POS.clone();
+    camState.lookTo = lookTarget.clone();
+    moonTimers.forEach(clearTimeout);
+    moonTimers = [];
+    moonLines.forEach(el => el.classList.remove('visible'));
+    moonName.classList.remove('visible');
+    moonBack.classList.remove('visible');
+    msgContainer.style.opacity = 1;
+    msgContainer.style.pointerEvents = '';
+    document.getElementById('gallery-btn').classList.remove('gone');
+    moonBtn.classList.remove('gone');   // she can visit the moon again
+  }
+
+  moonBtn.addEventListener('click', enterMoonMode);
+  moonBack.addEventListener('click', exitMoonMode);
 
   /* ══════════════════════════════════════════════════════════
      🎵 Music + intro unlock
@@ -1122,6 +1376,17 @@ const MUSIC_VOLUME = 0.55;
     }
 
     stars.rotation.y = t * 0.003;
+    stars.material.opacity = 0.8 + 0.15 * Math.sin(t * 1.9);   // gentle twinkle
+
+    /* night clouds slide across the moon and wrap around */
+    for (const cl of moonClouds) {
+      cl.sprite.position.x += cl.speed * dt;
+      if (cl.sprite.position.x > -15) cl.sprite.position.x = -95;
+    }
+    /* the moon breathes — stronger while she's visiting it */
+    const moonPulse = camState.mode === 'moon' ? 0.62 : 0.45;
+    moonHalo.material.opacity = moonPulse + 0.14 * Math.sin(t * 1.05);
+    moonInner.material.opacity = 0.68 + 0.12 * Math.sin(t * 1.05 + 0.7);
 
     /* camera state machine */
     if (camState.mode === 'transition') {
@@ -1140,6 +1405,29 @@ const MUSIC_VOLUME = 0.55;
     } else if (camState.mode === 'top') {
       camState.theta += dt * 0.045;   // dreamy slow orbit above the lily
       applySpherical(TOP_VIEW.radius, TOP_VIEW.phi, camState.theta);
+    } else if (camState.mode === 'toMoon' || camState.mode === 'fromMoon') {
+      const k = Math.min((t - camState.tStart) / 3.2, 1);
+      const e = easeInOut(k);
+      camera.position.lerpVectors(camState.posFrom, camState.posTo, e);
+      lookAtV.lerpVectors(camState.lookFrom, camState.lookTo, e);
+      camera.lookAt(lookAtV);
+      if (k >= 1) {
+        if (camState.mode === 'toMoon') {
+          camState.mode = 'moon';
+          startMoonSequence();
+        } else {
+          camState.mode = 'top';
+        }
+      }
+    } else if (camState.mode === 'moon') {
+      // floating gently under the moon, like lying in the grass
+      camera.position.set(
+        MOON_CAM_POS.x + 0.35 * Math.sin(t * 0.32),
+        MOON_CAM_POS.y + 0.22 * Math.sin(t * 0.47),
+        MOON_CAM_POS.z + 0.35 * Math.cos(t * 0.28)
+      );
+      camera.lookAt(MOON_POS);
+      positionMoonName();       // her name stays pinned beneath the moon
     } else {
       applySpherical(
         FRONT_VIEW.radius,
