@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#060913">
-<title>إلى سيدرا 🌙🤍</title>
+<title>إلى سيدرا</title>
 
 <!-- Elegant Arabic fonts (Amiri for the messages, Tajawal for UI) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -190,12 +190,12 @@
   }
 
   #moon-lines {
-    position: fixed; left: 50%; bottom: 16vh;
+    position: fixed; left: 50%; top: 58vh;   /* JS pins this under the moon */
     transform: translateX(-50%);
     z-index: 15;
     width: 92vw;
     display: flex; flex-direction: column; align-items: center;
-    gap: .55rem;
+    gap: .5rem;
     pointer-events: none;
   }
   .moon-line {
@@ -314,26 +314,26 @@
 
 <!-- Intro screen — her first tap here also starts the music -->
 <div id="intro">
-  <h1>إلى سيدرا 🤍</h1>
-  <p>المسي الشاشة للدخول ✨</p>
+  <h1>إلى سيدرا</h1>
+  <p>المسي الشاشة للدخول</p>
 </div>
 
-<div id="hint" class="hint">اضغطي على الوردة 🤍</div>
-<div id="bubble-hint" class="hint">المسي أي رسالة وحرّكيها متل الفقاعة 🫧</div>
+<div id="hint" class="hint">اضغطي على الوردة</div>
+<div id="bubble-hint" class="hint">المسي أي رسالة وحرّكيها متل الفقاعة</div>
 <div id="messages"></div>
 
-<button id="gallery-btn">ذكرياتنا ✨</button>
+<button id="gallery-btn">ذكرياتنا</button>
 
 <!-- 🌙 The moon act: camera leaves the flower and rises to the moon -->
-<button id="moon-btn">🌙 وفي شي كمان…</button>
+<button id="moon-btn">وفي شي كمان…</button>
 <div id="moon-lines">
-  <div class="moon-line">بتعرفي ليش بحب الليل؟</div>
-  <div class="moon-line">لأنو بيطلع فيه القمر…</div>
-  <div class="moon-line">بس القمر الحقيقي مو بالسما 🌙</div>
-  <div class="moon-line">إنتي القمر يا سيدرا</div>
+  <div class="moon-line">احترت شو أهديكي… الوردة ولّا القمر؟</div>
+  <div class="moon-line">التنين حلوين، والتنين بيشبهوكي</div>
+  <div class="moon-line">الورد بيحكي عن جمالك وطيبة قلبك</div>
+  <div class="moon-line">بس القمر… هو اللي بيحكي عن جمال روحك</div>
 </div>
-<div id="moon-name">سيدرا 🌙</div>
-<button id="moon-back">🌸 رجوع للوردة</button>
+<div id="moon-name">سيدرا</div>
+<button id="moon-back">رجوع للوردة</button>
 
 <div id="gallery">
   <div id="g-close">✕</div>
@@ -341,7 +341,7 @@
   <img id="g-img" alt="ذكرياتنا" style="display:none">
   <video id="g-video" controls playsinline preload="metadata" style="display:none"></video>
   <div class="g-empty" id="g-empty" style="display:none">
-    قريباً… ذكرياتنا الحلوة رح تكون هون 🤍
+    قريباً… ذكرياتنا الحلوة رح تكون هون
   </div>
   <div class="g-caption" id="g-caption"></div>
   <div class="g-nav" id="g-next">›</div>
@@ -434,7 +434,7 @@ const MUSIC_VOLUME = 0.55;
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   } catch (e) {
     document.getElementById('intro').innerHTML =
-      '<h1 style="font-size:1.4rem">متصفحك ما بيدعم WebGL 😢</h1>';
+      '<h1 style="font-size:1.4rem">متصفحك ما بيدعم WebGL</h1>';
     return;
   }
   // capped pixel ratio = sharp but never laggy on high-DPI phones
@@ -467,6 +467,9 @@ const MUSIC_VOLUME = 0.55;
   /* where the camera stands during the moon act (lily low in frame,
      moon high above) and the animated look-at point */
   const MOON_CAM_POS = new THREE.Vector3(5.5, 2.6, 11);
+  /* look a bit below the moon so it floats in the upper part of the
+     screen, leaving clean sky beneath it for her name and the words */
+  const MOON_LOOK_OFFSET = new THREE.Vector3(0, -14, 0);
   const lookAtV = new THREE.Vector3();
 
   /* ── Lights ───────────────────────────────────────────────── */
@@ -889,14 +892,6 @@ const MUSIC_VOLUME = 0.55;
     flower.add(pivot);
   });
 
-  /* Invisible generous tap target around the flower head */
-  const hitSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(2.6, 12, 12),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
-  );
-  hitSphere.position.y = HEAD_Y + 0.5;
-  flower.add(hitSphere);
-
   /* ── Fireflies ────────────────────────────────────────────── */
   const fireflies = [];
   const fireflyCount = isSmallScreen ? 26 : 40;
@@ -1209,6 +1204,7 @@ const MUSIC_VOLUME = 0.55;
   const moonBtn = document.getElementById('moon-btn');
   const moonBack = document.getElementById('moon-back');
   const moonName = document.getElementById('moon-name');
+  const moonLinesBox = document.getElementById('moon-lines');
   const moonLines = document.querySelectorAll('.moon-line');
   let moonTimers = [];
 
@@ -1220,11 +1216,13 @@ const MUSIC_VOLUME = 0.55;
     };
   }
 
-  function positionMoonName() {
+  /* her name sits right beneath the moon, and the words stack
+     below the name — nothing ever overlaps */
+  function positionMoonUI() {
     const p = moonScreenPosition();
-    const offset = Math.min(innerHeight * 0.17, 150);
     moonName.style.transform =
-      'translate(-50%,-50%) translate(' + p.x + 'px,' + (p.y + offset) + 'px)';
+      'translate(-50%,-50%) translate(' + p.x + 'px,' + (p.y + innerHeight * 0.16) + 'px)';
+    moonLinesBox.style.top = (p.y + innerHeight * 0.235) + 'px';
   }
 
   function enterMoonMode() {
@@ -1234,7 +1232,7 @@ const MUSIC_VOLUME = 0.55;
     camState.posFrom = camera.position.clone();
     camState.posTo = MOON_CAM_POS.clone();
     camState.lookFrom = lookTarget.clone();
-    camState.lookTo = MOON_POS.clone();
+    camState.lookTo = MOON_POS.clone().add(MOON_LOOK_OFFSET);
     // messages & buttons drift away while she's with the moon
     msgContainer.style.opacity = 0;
     msgContainer.style.pointerEvents = 'none';
@@ -1261,7 +1259,7 @@ const MUSIC_VOLUME = 0.55;
     camState.tStart = clock.getElapsedTime();
     camState.posFrom = camera.position.clone();
     camState.posTo = sphericalPos(TOP_VIEW.radius, TOP_VIEW.phi, camState.theta);
-    camState.lookFrom = MOON_POS.clone();
+    camState.lookFrom = MOON_POS.clone().add(MOON_LOOK_OFFSET);
     camState.lookTo = lookTarget.clone();
     moonTimers.forEach(clearTimeout);
     moonTimers = [];
@@ -1285,31 +1283,42 @@ const MUSIC_VOLUME = 0.55;
 
   const intro = document.getElementById('intro');
   const hint = document.getElementById('hint');
+  let entered = false;   // guards against the intro tap counting twice
   intro.addEventListener('pointerdown', () => {
     intro.classList.add('hidden');
     hint.classList.add('visible');
     music.play().catch(() => { /* no music file linked yet — fine */ });
+    setTimeout(() => { entered = true; }, 700);
   }, { once: true });
 
   /* ══════════════════════════════════════════════════════════
-     👆 Tap the flower → glide to the top-down view
+     👆 Simple controls:
+        · tap anywhere        → glide above the flower
+        · swipe up (top view) → visit the moon
+        · swipe down (moon)   → come back to the flower
      ══════════════════════════════════════════════════════════ */
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
+  let swipeStart = null;
 
   window.addEventListener('pointerdown', (e) => {
     spawnDust(e.clientX, e.clientY, 14);
-    if (camState.mode !== 'front') return;
-    pointer.x = (e.clientX / innerWidth) * 2 - 1;
-    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    if (raycaster.intersectObjects(flower.children, true).length > 0) {
+    swipeStart = { y: e.clientY, t: performance.now() };
+    if (camState.mode === 'front' && entered) {
       camState.mode = 'transition';
       camState.tStart = clock.getElapsedTime();
       camState.from = { ...FRONT_VIEW };
       camState.to = { ...TOP_VIEW };
       hint.classList.add('gone');
     }
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (!swipeStart) return;
+    const dy = e.clientY - swipeStart.y;
+    const quick = performance.now() - swipeStart.t < 700;
+    swipeStart = null;
+    if (!quick || gallery.classList.contains('open')) return;
+    if (dy < -70 && camState.mode === 'top') enterMoonMode();
+    else if (dy > 70 && camState.mode === 'moon') exitMoonMode();
   });
 
   window.addEventListener('pointermove', e => {
@@ -1426,8 +1435,9 @@ const MUSIC_VOLUME = 0.55;
         MOON_CAM_POS.y + 0.22 * Math.sin(t * 0.47),
         MOON_CAM_POS.z + 0.35 * Math.cos(t * 0.28)
       );
-      camera.lookAt(MOON_POS);
-      positionMoonName();       // her name stays pinned beneath the moon
+      lookAtV.copy(MOON_POS).add(MOON_LOOK_OFFSET);
+      camera.lookAt(lookAtV);
+      positionMoonUI();     // name + words stay pinned beneath the moon
     } else {
       applySpherical(
         FRONT_VIEW.radius,
