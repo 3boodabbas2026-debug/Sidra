@@ -107,19 +107,13 @@
   }
   .msg.visible { opacity: 1; }
 
-  /* 🫧 When she taps a message it becomes a bubble she can throw */
+  /* 🫧 When she taps a message it becomes a bubble she can throw —
+     just a soft halo of light around the words, nothing solid */
   .msg.bubble {
     padding: .9rem 1.3rem;
-    border-radius: 2.2rem;
-    background: radial-gradient(circle at 30% 25%,
-      rgba(255,255,255,.20), rgba(170,200,255,.06) 55%, rgba(255,255,255,.10));
-    border: 1px solid rgba(200, 222, 255, .4);
-    box-shadow:
-      0 0 26px rgba(170, 200, 255, .3),
-      inset 0 0 18px rgba(255, 255, 255, .1),
-      inset 0 -6px 14px rgba(140, 180, 255, .12);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: radial-gradient(ellipse at center,
+      rgba(180, 208, 255, .14), rgba(180, 208, 255, .05) 55%, transparent 75%);
+    border-radius: 50%;
     animation: bubblePop .45s ease;
   }
   .msg.bubble:active { cursor: grabbing; }
@@ -129,64 +123,45 @@
     100% { scale: 1; }
   }
 
-  /* ── Glowing gallery button ─────────────────────────────── */
-  #gallery-btn {
-    position: fixed; bottom: 5vh; left: 50%;
-    transform: translateX(-50%) scale(.85);
-    z-index: 20;
-    padding: .8rem 2.1rem;
-    font-family: 'Amiri', serif;
-    font-size: clamp(1rem, 4.5vw, 1.25rem);
-    color: #fdf8ec;
-    background: rgba(255, 248, 230, .07);
-    border: 1px solid rgba(255, 240, 200, .45);
-    border-radius: 999px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    cursor: pointer;
-    opacity: 0; pointer-events: none;
-    transition: opacity 2s ease, transform 2s ease;
-    animation: btnGlow 2.8s ease-in-out infinite;
-  }
-  #gallery-btn.visible {
-    opacity: 1; pointer-events: auto;
-    transform: translateX(-50%) scale(1);
-  }
-  @keyframes btnGlow {
-    0%, 100% { box-shadow: 0 0 14px rgba(255,236,190,.25), inset 0 0 10px rgba(255,236,190,.08); }
-    50%      { box-shadow: 0 0 32px rgba(255,236,190,.55), inset 0 0 16px rgba(255,236,190,.16); }
-  }
-  #gallery-btn.gone { opacity: 0 !important; pointer-events: none !important; }
-
-  /* ── 🌙 The moon act ────────────────────────────────────── */
-  #moon-btn, #moon-back {
+  /* ── Buttons: pure glowing text, nothing behind them ────── */
+  #gallery-btn, #moon-btn, #moon-back {
     position: fixed; left: 50%;
-    transform: translateX(-50%) scale(.85);
+    transform: translateX(-50%) scale(.9);
     z-index: 20;
-    padding: .75rem 1.9rem;
+    padding: .55rem 1.7rem;          /* generous invisible tap target */
     font-family: 'Amiri', serif;
-    font-size: clamp(.95rem, 4.2vw, 1.2rem);
-    color: #eef3ff;
-    background: rgba(190, 210, 255, .06);
-    border: 1px solid rgba(170, 200, 255, .45);
-    border-radius: 999px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    font-weight: 700;
+    background: none;
+    border: none;
     cursor: pointer;
     opacity: 0; pointer-events: none;
     transition: opacity 2s ease, transform 2s ease;
-    animation: moonBtnGlow 3.2s ease-in-out infinite;
   }
-  #moon-btn  { bottom: 13vh; }
-  #moon-back { bottom: 5vh; }
-  #moon-btn.visible, #moon-back.visible {
+  #gallery-btn {
+    bottom: 5vh;
+    font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+    color: #fdf6e4;
+    animation: textGlowWarm 2.8s ease-in-out infinite;
+  }
+  #moon-btn, #moon-back {
+    font-size: clamp(1rem, 4.4vw, 1.25rem);
+    color: #eef3ff;
+    animation: textGlowCool 3.2s ease-in-out infinite;
+  }
+  #moon-btn  { bottom: 12.5vh; }
+  #moon-back { bottom: 4vh; }
+  #gallery-btn.visible, #moon-btn.visible, #moon-back.visible {
     opacity: 1; pointer-events: auto;
     transform: translateX(-50%) scale(1);
   }
-  #moon-btn.gone { opacity: 0 !important; pointer-events: none !important; }
-  @keyframes moonBtnGlow {
-    0%, 100% { box-shadow: 0 0 14px rgba(170,200,255,.25), inset 0 0 10px rgba(170,200,255,.08); }
-    50%      { box-shadow: 0 0 34px rgba(170,200,255,.6),  inset 0 0 16px rgba(170,200,255,.18); }
+  #gallery-btn.gone, #moon-btn.gone { opacity: 0 !important; pointer-events: none !important; }
+  @keyframes textGlowWarm {
+    0%, 100% { text-shadow: 0 0 10px rgba(255,236,190,.4),  0 0 26px rgba(255,214,140,.2),  0 2px 6px rgba(0,0,0,.8); }
+    50%      { text-shadow: 0 0 18px rgba(255,236,190,.85), 0 0 48px rgba(255,214,140,.45), 0 2px 6px rgba(0,0,0,.8); }
+  }
+  @keyframes textGlowCool {
+    0%, 100% { text-shadow: 0 0 10px rgba(170,200,255,.45), 0 0 26px rgba(150,185,255,.22), 0 2px 6px rgba(0,0,0,.8); }
+    50%      { text-shadow: 0 0 20px rgba(190,215,255,.9),  0 0 50px rgba(150,185,255,.5),  0 2px 6px rgba(0,0,0,.8); }
   }
 
   #moon-lines {
@@ -247,62 +222,172 @@
   /* messages fade away softly while she's with the moon */
   #messages { transition: opacity 1.2s ease; }
 
-  /* ── Memories gallery (photos + videos) ─────────────────── */
+  /* ── 📖 The memory book, read by candlelight ────────────── */
   #gallery {
     position: fixed; inset: 0; z-index: 60;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: rgba(4, 7, 18, .93);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 62%,
+      rgba(28, 20, 8, .6), rgba(3, 5, 14, .97) 78%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     opacity: 0; pointer-events: none;
-    transition: opacity .6s ease;
+    transition: opacity .7s ease;
   }
   #gallery.open { opacity: 1; pointer-events: auto; }
-  #gallery img, #gallery video {
-    max-width: 88vw; max-height: 62vh;
-    border-radius: 18px;
-    box-shadow: 0 0 50px rgba(190, 205, 255, .22), 0 10px 40px rgba(0,0,0,.6);
-    object-fit: contain;
-    background: #000;
-    transition: opacity .3s ease;
+
+  #book {
+    position: relative;
+    width: min(72vw, 330px);
+    aspect-ratio: 10 / 13.4;
+    perspective: 1700px;
+    filter: drop-shadow(0 24px 42px rgba(0, 0, 0, .65));
+    cursor: pointer;
   }
-  #gallery .g-caption {
-    margin-top: 1.1rem;
-    color: rgba(220, 226, 245, .8);
+  .page, #page-leaf, #cover {
+    position: absolute; inset: 0;
+    border-radius: 10px 3px 3px 10px;   /* spine on the right — an Arabic book */
+  }
+  .page { overflow: hidden; }
+  .paper {
+    background:
+      radial-gradient(ellipse at 30% 18%, rgba(255,255,255,.4), transparent 55%),
+      linear-gradient(160deg, #f8efdd 0%, #f0e4c8 55%, #e6d5b1 100%);
+    box-shadow: inset -16px 0 24px rgba(120, 90, 40, .25),
+                inset 2px 2px 8px rgba(255, 255, 255, .5);
+  }
+  #page-base { display: flex; flex-direction: column; align-items: center; z-index: 1; }
+  #page-base img, #page-leaf img {
+    width: 84%; height: 74%;
+    margin-top: 7%;
+    object-fit: cover;
+    border: 5px solid #fffdf4;
+    border-radius: 3px;
+    box-shadow: 0 4px 14px rgba(90, 60, 20, .35);
+    filter: sepia(.14) contrast(.97);
+    background: #e8e0cc;
+  }
+  .page-num {
+    margin-top: auto; margin-bottom: 4%;
+    font-family: 'Amiri', serif;
+    color: #7a5f3a;
     font-size: .95rem;
     letter-spacing: 1px;
     direction: ltr;
   }
-  #gallery .g-empty {
-    font-family: 'Amiri', serif;
-    color: rgba(235, 238, 250, .85);
-    font-size: 1.2rem;
-    text-align: center;
-    padding: 0 2rem;
-    line-height: 2.2;
+  /* the leaf that physically turns over the spine */
+  #page-leaf, #cover {
+    transform-origin: right center;
+    transform-style: preserve-3d;
+    will-change: transform;
   }
+  #page-leaf { display: none; z-index: 5; }
+  .leaf-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: inherit;
+    overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .leaf-back-face { transform: rotateY(180deg); }
+
+  /* the leather cover, closed until she opens the book */
+  #cover { z-index: 10; transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
+  #cover.open { transform: rotateY(178deg); }
+  #cover.away { visibility: hidden; }
+  .cover-front {
+    justify-content: center;
+    gap: .7rem;
+    background:
+      radial-gradient(ellipse at 30% 22%, rgba(255,255,255,.07), transparent 55%),
+      linear-gradient(150deg, #2a3560 0%, #1b2547 55%, #121a34 100%);
+    box-shadow: inset -12px 0 20px rgba(0, 0, 0, .5);
+  }
+  .cover-front::before {
+    content: '';
+    position: absolute; inset: 12px;
+    border: 1.5px solid rgba(212, 181, 116, .75);
+    border-radius: 7px;
+    box-shadow: 0 0 14px rgba(212, 181, 116, .25), inset 0 0 14px rgba(212, 181, 116, .15);
+    pointer-events: none;
+  }
+  .cover-title {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1.7rem, 7vw, 2.3rem);
+    font-weight: 700;
+    color: #e8cf9a;
+    text-shadow: 0 0 14px rgba(212, 181, 116, .45);
+  }
+  .cover-sub {
+    font-family: 'Amiri', serif;
+    font-size: clamp(1rem, 4vw, 1.2rem);
+    color: rgba(232, 207, 154, .8);
+  }
+
+  /* 🕯️ candles beside the book */
+  .candle { position: absolute; z-index: 2; pointer-events: none; }
+  .candle-left  { left: max(4vw, 14px);  bottom: 13vh; }
+  .candle-right { right: max(4vw, 14px); bottom: 20vh; transform: scale(.8); }
+  .candle::before {                 /* the warm breathing halo */
+    content: '';
+    position: absolute; left: 50%; top: -52px;
+    width: 200px; height: 200px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle,
+      rgba(255, 190, 90, .3), rgba(255, 160, 60, .08) 45%, transparent 70%);
+    animation: haloFlick 2.3s ease-in-out infinite;
+  }
+  .flame {
+    width: 13px; height: 24px;
+    margin: 0 auto;
+    background: radial-gradient(ellipse at 50% 78%,
+      #fff8dd 0%, #ffd977 42%, #ff9c3a 78%, rgba(255,110,20,0) 100%);
+    border-radius: 50% 50% 42% 42% / 68% 68% 32% 32%;
+    transform-origin: 50% 95%;
+    animation: flick 1.9s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(255, 180, 80, .9));
+  }
+  .wick { width: 2px; height: 6px; margin: -1px auto 0; background: #3a2a1a; }
+  .wax {
+    width: 24px; height: 88px;
+    margin: 0 auto;
+    border-radius: 7px 9px 4px 4px;
+    background: linear-gradient(105deg, #f8ecd0 0%, #ecd9ae 55%, #c9ad7c 100%);
+    box-shadow: inset -6px 0 9px rgba(120, 85, 35, .35), 0 6px 14px rgba(0,0,0,.5);
+  }
+  .candle-right .wax { height: 56px; }   /* half-melted */
+  @keyframes flick {
+    0%, 100% { transform: scaleY(1) rotate(-2deg); }
+    28%      { transform: scale(1.08, 1.14) rotate(2.5deg); }
+    55%      { transform: scale(.94, .88) rotate(-3deg); }
+    80%      { transform: scale(1.04, 1.06) rotate(1.5deg); }
+  }
+  @keyframes haloFlick { 0%, 100% { opacity: .8; } 30% { opacity: 1; } 60% { opacity: .6; } }
+
   .g-nav {
     position: absolute; top: 50%;
     transform: translateY(-50%);
-    width: 46px; height: 46px;
+    width: 54px; height: 54px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; color: #f0ecdf;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.18);
-    border-radius: 50%;
+    font-size: 2rem;
+    color: rgba(240, 232, 210, .9);
+    text-shadow: 0 0 12px rgba(255, 220, 150, .5);
+    background: none; border: none;
     cursor: pointer;
-    z-index: 2;
+    z-index: 3;
+    user-select: none;
   }
-  #g-prev { left: 3vw; }
-  #g-next { right: 3vw; }
+  #g-next { left: 2vw; }    /* Arabic book: forward = the left page turns right */
+  #g-prev { right: 2vw; }
   #g-close {
     position: absolute; top: 3.5vh; right: 5vw;
-    font-size: 1.7rem; color: rgba(240, 236, 223, .85);
+    font-size: 1.6rem;
+    color: rgba(240, 236, 223, .85);
+    text-shadow: 0 0 10px rgba(255, 255, 255, .35);
     cursor: pointer;
-    width: 44px; height: 44px;
+    width: 46px; height: 46px;
     display: flex; align-items: center; justify-content: center;
-    z-index: 2;
+    z-index: 3;
   }
 </style>
 </head>
@@ -335,16 +420,40 @@
 <div id="moon-name">سيدرا</div>
 <button id="moon-back">رجوع للوردة</button>
 
+<!-- 📖 The memory book, read by candlelight -->
 <div id="gallery">
   <div id="g-close">✕</div>
-  <div class="g-nav" id="g-prev">‹</div>
-  <img id="g-img" alt="ذكرياتنا" style="display:none">
-  <video id="g-video" controls playsinline preload="metadata" style="display:none"></video>
-  <div class="g-empty" id="g-empty" style="display:none">
-    قريباً… ذكرياتنا الحلوة رح تكون هون
+
+  <div class="candle candle-left">
+    <div class="flame"></div><div class="wick"></div><div class="wax"></div>
   </div>
-  <div class="g-caption" id="g-caption"></div>
-  <div class="g-nav" id="g-next">›</div>
+  <div class="candle candle-right">
+    <div class="flame"></div><div class="wick"></div><div class="wax"></div>
+  </div>
+
+  <div id="book">
+    <!-- the open page underneath -->
+    <div id="page-base" class="page paper">
+      <img id="base-img" alt="">
+      <div class="page-num" id="page-num"></div>
+    </div>
+    <!-- the leaf that turns -->
+    <div id="page-leaf">
+      <div class="leaf-face paper"><img id="leaf-img" alt=""></div>
+      <div class="leaf-face leaf-back-face paper"></div>
+    </div>
+    <!-- the closed leather cover -->
+    <div id="cover">
+      <div class="leaf-face cover-front">
+        <div class="cover-title">ذكرياتنا</div>
+        <div class="cover-sub">لسيدرا</div>
+      </div>
+      <div class="leaf-face leaf-back-face paper"></div>
+    </div>
+  </div>
+
+  <div class="g-nav" id="g-next">‹</div>
+  <div class="g-nav" id="g-prev">›</div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -364,8 +473,9 @@
    ⚙️  EASY CONFIG
    ════════════════════════════════════════════════════════════════ */
 
-/* 🖼️ Your Snapchat memories — files inside the "memories" folder.
-   Photos and videos both work; add or remove lines freely.       */
+/* 🖼️ Your Snapchat memories — photo files inside the "memories"
+   folder. They appear as pages of the book, in this order.
+   (Photos only — the book doesn't show videos.)                  */
 const MEMORIES = [
   'memories/Snapchat-1012999025.jpg',
   'memories/Snapchat-111030093.jpg',
@@ -387,11 +497,6 @@ const MEMORIES = [
   'memories/Snapchat-659360062.jpg',
   'memories/Snapchat-727248920.jpg',
   'memories/Snapchat-935623086.jpg',
-  'memories/Snapchat-1003847677.mp4',
-  'memories/Snapchat-1042475492.mp4',
-  'memories/Snapchat-1119338354.mp4',
-  'memories/Snapchat-1306884944.mp4',
-  'memories/Snapchat-2001426830.mp4',
 ];
 
 /* 💬 The messages that orbit the flower (tap one → it becomes a
@@ -466,9 +571,11 @@ const MUSIC_VOLUME = 0.55;
 
   /* where the camera stands during the moon act (lily low in frame,
      moon high above) and the animated look-at point */
-  const MOON_CAM_POS = new THREE.Vector3(5.5, 2.6, 11);
+  /* stand on the far side of the clearing so the lily stays out of
+     frame and the words float in clean sky */
+  const MOON_CAM_POS = new THREE.Vector3(-11, 3.2, -21);
   /* look a bit below the moon so it floats in the upper part of the
-     screen, leaving clean sky beneath it for her name and the words */
+     screen, leaving room beneath it for her name and the words */
   const MOON_LOOK_OFFSET = new THREE.Vector3(0, -14, 0);
   const lookAtV = new THREE.Vector3();
 
@@ -1141,59 +1248,96 @@ const MUSIC_VOLUME = 0.55;
   }
 
   /* ══════════════════════════════════════════════════════════
-     🖼️ Memories gallery (photos + videos, swipe to browse)
+     📖 The memory book — the cover swings open, then each photo
+        is a page that physically turns over the spine (RTL,
+        like a real Arabic book: forward = left page turns right)
      ══════════════════════════════════════════════════════════ */
   const gallery = document.getElementById('gallery');
-  const gImg = document.getElementById('g-img');
-  const gVideo = document.getElementById('g-video');
-  const gCaption = document.getElementById('g-caption');
-  let gIndex = 0;
+  const cover = document.getElementById('cover');
+  const leaf = document.getElementById('page-leaf');
+  const leafImg = document.getElementById('leaf-img');
+  const baseImg = document.getElementById('base-img');
+  const pageNum = document.getElementById('page-num');
+  const book = { idx: 0, busy: false };
 
-  function showMemory(i) {
-    if (MEMORIES.length === 0) return;
-    gIndex = (i + MEMORIES.length) % MEMORIES.length;
-    const src = MEMORIES[gIndex];
-    const isVideo = /\.(mp4|webm|mov)$/i.test(src);
-    gVideo.pause();
-    if (isVideo) {
-      gImg.style.display = 'none';
-      gVideo.style.display = 'block';
-      gVideo.src = src;
+  function setPage(i) {
+    baseImg.src = MEMORIES[i];
+    pageNum.textContent = (i + 1) + ' / ' + MEMORIES.length;
+    // preload neighbours so the flip is never blank
+    [i - 1, i + 1].forEach(j => {
+      if (j >= 0 && j < MEMORIES.length) { const im = new Image(); im.src = MEMORIES[j]; }
+    });
+  }
+
+  function flipPage(dir) {          // +1 forward, -1 back
+    if (book.busy || !cover.classList.contains('open')) return;
+    const target = book.idx + dir;
+    if (target < 0 || target >= MEMORIES.length) return;
+    book.busy = true;
+    if (dir > 0) {
+      // current photo lifts and turns away, revealing the next
+      leafImg.src = MEMORIES[book.idx];
+      setPage(target);
+      leaf.style.transition = 'none';
+      leaf.style.transform = 'rotateY(0deg)';
+      leaf.style.display = 'block';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        leaf.style.transition = 'transform .95s cubic-bezier(.42,.08,.22,1)';
+        leaf.style.transform = 'rotateY(178deg)';
+      }));
     } else {
-      gVideo.style.display = 'none';
-      gVideo.removeAttribute('src');
-      gImg.style.display = 'block';
-      gImg.style.opacity = 0;
-      gImg.src = src;
-      gImg.onload = () => { gImg.style.opacity = 1; };
+      // a turned page comes back, carrying the previous photo
+      leafImg.src = MEMORIES[target];
+      leaf.style.transition = 'none';
+      leaf.style.transform = 'rotateY(178deg)';
+      leaf.style.display = 'block';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        leaf.style.transition = 'transform .95s cubic-bezier(.42,.08,.22,1)';
+        leaf.style.transform = 'rotateY(0deg)';
+      }));
     }
-    gCaption.textContent = (gIndex + 1) + ' / ' + MEMORIES.length;
+    setTimeout(() => {
+      book.idx = target;
+      if (dir < 0) setPage(target);
+      leaf.style.display = 'none';
+      book.busy = false;
+    }, 1000);
   }
 
   document.getElementById('gallery-btn').addEventListener('click', () => {
     gallery.classList.add('open');
-    if (MEMORIES.length === 0) {
-      document.getElementById('g-empty').style.display = 'block';
-      document.getElementById('g-prev').style.display = 'none';
-      document.getElementById('g-next').style.display = 'none';
-    } else {
-      showMemory(gIndex);
-    }
+    setPage(book.idx);
+    // the cover swings open by itself a moment later
+    setTimeout(() => cover.classList.add('open'), 900);
   });
-  document.getElementById('g-close').addEventListener('click', () => {
-    gVideo.pause();
+  // once fully open, tuck the cover away so it doesn't stick out
+  cover.addEventListener('transitionend', () => {
+    if (cover.classList.contains('open')) cover.classList.add('away');
+  });
+  document.getElementById('g-close').addEventListener('click', (e) => {
+    e.stopPropagation();
     gallery.classList.remove('open');
+    setTimeout(() => cover.classList.remove('open', 'away'), 700);
   });
-  document.getElementById('g-prev').addEventListener('click', () => showMemory(gIndex - 1));
-  document.getElementById('g-next').addEventListener('click', () => showMemory(gIndex + 1));
+  document.getElementById('g-next').addEventListener('click', () => flipPage(1));
+  document.getElementById('g-prev').addEventListener('click', () => flipPage(-1));
 
-  let swipeX = null;
-  gallery.addEventListener('touchstart', e => { swipeX = e.touches[0].clientX; }, { passive: true });
+  // tapping the book: closed → open it; open → left half turns
+  // the page forward, right half turns it back
+  document.getElementById('book').addEventListener('click', (e) => {
+    if (!cover.classList.contains('open')) { cover.classList.add('open'); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    flipPage(e.clientX < r.left + r.width / 2 ? 1 : -1);
+  });
+
+  // swipe: dragging toward the right turns the page forward (RTL)
+  let swipeGX = null;
+  gallery.addEventListener('touchstart', e => { swipeGX = e.touches[0].clientX; }, { passive: true });
   gallery.addEventListener('touchend', e => {
-    if (swipeX === null) return;
-    const dx = e.changedTouches[0].clientX - swipeX;
-    if (Math.abs(dx) > 45) showMemory(gIndex + (dx < 0 ? 1 : -1));
-    swipeX = null;
+    if (swipeGX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeGX;
+    if (Math.abs(dx) > 45) flipPage(dx > 0 ? 1 : -1);
+    swipeGX = null;
   }, { passive: true });
 
   /* ══════════════════════════════════════════════════════════
@@ -1217,12 +1361,14 @@ const MUSIC_VOLUME = 0.55;
   }
 
   /* her name sits right beneath the moon, and the words stack
-     below the name — nothing ever overlaps */
+     below the name — clamped so nothing reaches the back button */
   function positionMoonUI() {
     const p = moonScreenPosition();
+    const nameY = Math.min(p.y + innerHeight * 0.155, innerHeight * 0.42);
+    const linesY = Math.min(p.y + innerHeight * 0.225, innerHeight * 0.50);
     moonName.style.transform =
-      'translate(-50%,-50%) translate(' + p.x + 'px,' + (p.y + innerHeight * 0.16) + 'px)';
-    moonLinesBox.style.top = (p.y + innerHeight * 0.235) + 'px';
+      'translate(-50%,-50%) translate(' + p.x + 'px,' + nameY + 'px)';
+    moonLinesBox.style.top = linesY + 'px';
   }
 
   function enterMoonMode() {
